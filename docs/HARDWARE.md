@@ -10,13 +10,22 @@ elementy płytki z mikrokontrolerem.
 
 ## 1. Płytka i złącze programowania
 
-![Złącze SWD J2 na płytce TempTale Ultra](assets/swd-pads-j2.webp)
+![Złącze SWD J2 na płytce TempTale Ultra](assets/swd-pads-j2.png)
 
 *Zdjęcie: [Free ARM Development Board From a Used-up Temperature Logger](https://www.instructables.com/Free-ARM-Development-Board-From-a-Used-up-Temperat/)
-(Instructables) — prawa do zdjęcia należą do jego autora; użyte z podaniem źródła.*
+(Instructables) — prawa do zdjęcia należą do jego autora; użyte z podaniem źródła, opis NRST dodany.*
 
 Programowanie odbywa się przez **SWD** na padach złącza **J2**, tuż obok
-procesora (lewy górny róg płytki, przy oznaczeniu U2):
+procesora (lewy górny róg płytki, przy oznaczeniu U2). Układ padów (widok
+jak na zdjęciu):
+
+```text
+górny rząd:  SWDIO   ·      ·      3.3V
+dolny rząd:  GND     SWCLK  ·      NRST
+```
+
+NRST to dolny prawy pad, bezpośrednio pod 3.3V.
+
 
 | Pad J2 | Sygnał | ST-Link | Pin MCU (LQFP64) |
 | --- | --- | --- | --- |
@@ -24,15 +33,15 @@ procesora (lewy górny róg płytki, przy oznaczeniu U2):
 | SWCLK | PA14 | SWCLK | 49 |
 | GND | masa | GND | 12, 18, 31, 47, 63 |
 | 3.3V | zasilanie / pomiar napięcia | 3.3V lub VAPP / T_VCC | 13, 19, 32, 48, 64 |
-| NRST (opcjonalnie) | reset | NRST | 7 |
+| NRST | reset | NRST | 7 |
 
 ### Podłączenie krok po kroku
 
 1. Otwórz obudowę i wyjmij płytkę. Wyjmij baterię albo pamiętaj, że będzie
    zasilała układ równolegle z ST-Linkiem.
 2. Przylutuj cienkie przewody (albo listwę goldpin) do padów **SWDIO, SWCLK,
-   GND i 3.3V**. Jeśli masz możliwość, podłącz też **NRST** procesora — wtedy
-   tryb *Under reset* działa najpewniej.
+   GND, 3.3V i NRST**. NRST jest potrzebny do trybu *Under reset*, z którym
+   ta płytka łączy się najpewniej.
 3. Połącz przewody z ST-Linkiem według tabeli.
 4. W STM32CubeProgrammer wybierz **ST-LINK**, port **SWD**, tryb **Under reset**
    (tryb *Hot plug* na tej płytce nie działa), kliknij **Connect**.

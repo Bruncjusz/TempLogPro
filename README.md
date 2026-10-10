@@ -30,7 +30,7 @@ Wersja firmware: **0.10.0** · licencja **MIT**
 
 ## Wgranie gotowego firmware
 
-1. Podłącz ST-Link do złącza SWD **J2** na płytce (SWDIO, SWCLK, GND, 3,3 V; zdjęcie i opis w [docs/HARDWARE.md](docs/HARDWARE.md)).
+1. Podłącz ST-Link do złącza SWD **J2** na płytce (SWDIO, SWCLK, GND, 3,3 V, NRST; zdjęcie i opis w [docs/HARDWARE.md](docs/HARDWARE.md)).
 2. W STM32CubeProgrammer wgraj `firmware/TempLogPro.bin` pod adres `0x08000000`
    (tryb połączenia *Under reset*, bez *Full chip erase*).
 3. Po restarcie podłącz USB — pojawi się dysk `TEMPLOGPRO`; otwórz `TempLogPro.html` w Chrome lub Edge.
