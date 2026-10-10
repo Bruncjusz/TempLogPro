@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="TempLog Pro">
+  <defs>
+    <linearGradient id="tlp-frame" gradientUnits="userSpaceOnUse" x1="4" y1="4" x2="60" y2="60">
+      <stop offset="0" stop-color="#00D0FF"/>
+      <stop offset="1" stop-color="#0A3CFF"/>
+    </linearGradient>
+    <linearGradient id="tlp-glyph" gradientUnits="userSpaceOnUse" x1="14" y1="20" x2="54" y2="50">
+      <stop offset="0" stop-color="#19D3FF"/>
+      <stop offset="1" stop-color="#1E78FF"/>
+    </linearGradient>
+  </defs>
+  <!-- kafelek: fill="none" daje przezroczyste tło -->
+  <rect x="3" y="3" width="58" height="58" rx="14.5" fill="#0B1220" stroke="url(#tlp-frame)" stroke-width="5"/>
+  <!-- rurka termometru -->
+  <path d="M16 17a5 5 0 0 1 10 0v18.5a9 9 0 1 1-10 0z" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/>
+  <!-- rtęć -->
+  <path d="M21 43V24" fill="none" stroke="url(#tlp-glyph)" stroke-width="3.2" stroke-linecap="round"/>
+  <circle cx="21" cy="43" r="5.2" fill="url(#tlp-glyph)"/>
+  <!-- linia wykresu -->
+  <path d="M31 34h5.5l3-10 5.5 19 3-9h5" fill="none" stroke="url(#tlp-glyph)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

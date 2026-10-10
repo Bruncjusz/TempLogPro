@@ -1,0 +1,136 @@
+{
+  "port": "COM3",
+  "host_time": "2026-09-19T23:49:13.4429576+02:00",
+  "identity": "TEMPTALE_MODULE_PROBE_V1 READ_ONLY LOGGER_DISABLED",
+  "GET MCU": [
+    "CPUID=412FC230",
+    "DBGMCU_IDCODE=10F86427",
+    "DBGMCU_CR=00000000",
+    "FLASH_KIB=00000100",
+    "UID0=01473134",
+    "UID1=35323131",
+    "UID2=0046002B",
+    "CORE_HZ=01E84800",
+    "LCD_READY=00000001"
+  ],
+  "GET CLOCKS": [
+    "RCC_CR=03030300",
+    "RCC_CFGR=0091000F",
+    "RCC_CSR=14420003",
+    "RCC_AHBENR=0000801F",
+    "RCC_APB1ENR=10800200",
+    "RCC_APB2ENR=00000001",
+    "PWR_CR=00000800",
+    "PWR_CSR=00000008",
+    "LCD_CR=000000CD",
+    "LCD_FCR=003C0C50",
+    "LCD_SR=0000003B",
+    "ADC_CR2=00000000",
+    "ADC_CCR=00000000",
+    "SPI1_CR1=00000000",
+    "SCB_SCR=00000000"
+  ],
+  "GET GPIO A": [
+    "PORT_BASE=40020000",
+    "MODER=A82AA9A0",
+    "OTYPER=00000000",
+    "PUPDR=24000000",
+    "IDR=000030D3",
+    "ODR=00000010",
+    "AFRL=5550BB00",
+    "AFRH=B0000BBB"
+  ],
+  "GET GPIO B": [
+    "PORT_BASE=40020400",
+    "MODER=AAA95AAA",
+    "OTYPER=000000C0",
+    "PUPDR=00005000",
+    "IDR=000000C0",
+    "ODR=000000C0",
+    "AFRL=BBBBBBBB",
+    "AFRH=BBBBBBB0"
+  ],
+  "GET GPIO C": [
+    "PORT_BASE=40020800",
+    "MODER=0AAAAAA9",
+    "OTYPER=00000000",
+    "PUPDR=00000000",
+    "IDR=00000000",
+    "ODR=00000000",
+    "AFRL=BBBBBBB0",
+    "AFRH=00BBBBBB"
+  ],
+  "GET GPIO D": [
+    "PORT_BASE=40020C00",
+    "MODER=AAAAAAAA",
+    "OTYPER=00000000",
+    "PUPDR=00000000",
+    "IDR=00000000",
+    "ODR=00000000",
+    "AFRL=BBBBBBBB",
+    "AFRH=BBBBBBBB"
+  ],
+  "GET GPIO E": [
+    "PORT_BASE=40021000",
+    "MODER=AAAAAAAA",
+    "OTYPER=00000000",
+    "PUPDR=00000000",
+    "IDR=00000000",
+    "ODR=00000000",
+    "AFRL=BBBBBBBB",
+    "AFRH=BBBBBBBB"
+  ],
+  "GET RTC": [
+    "RTC_SSR=00000035",
+    "RTC_TR=00210801",
+    "RTC_DR=00266825",
+    "RTC_CR=00000000",
+    "RTC_ISR=00000037",
+    "RTC_PRER=007D0144"
+  ],
+  "GET SENSOR": [
+    "BUS=I2C_BITBANG PB6=SCL PB7=SDA ADDR=48 pointer_reads_only",
+    "SENSOR reg=00 len=2 ack=1 data=19C0 tick_ms=1078495",
+    "SENSOR reg=01 len=1 ack=1 data=6000 tick_ms=1078511",
+    "SENSOR reg=01 len=2 ack=1 data=60A0 tick_ms=1078529",
+    "SENSOR reg=02 len=2 ack=1 data=4B00 tick_ms=1078547",
+    "SENSOR reg=03 len=2 ack=1 data=5000 tick_ms=1078565",
+    "SENSOR reg=00 len=2 ack=1 data=19C0 tick_ms=1078583"
+  ],
+  "GET FLASH": [
+    "FLASH ok=1 jedec=EF3013 status=00 power_down=1",
+    "BUS=SPI1 PA4=CS PA5=SCK PA6=MISO PA7=MOSI",
+    "SPI1_CR1_AFTER=00000000",
+    "RCC_APB2ENR_AFTER=00000001"
+  ],
+  "GET VDD": [
+    "VDD_OK=00000001",
+    "VDD_MV=00000CEA"
+  ],
+  "SENSOR_REPEAT": [
+    "BUS=I2C_BITBANG PB6=SCL PB7=SDA ADDR=48 pointer_reads_only",
+    "SENSOR reg=00 len=2 ack=1 data=19C0 tick_ms=1078606",
+    "SENSOR reg=01 len=1 ack=1 data=6000 tick_ms=1078622",
+    "SENSOR reg=01 len=2 ack=1 data=60A0 tick_ms=1078640",
+    "SENSOR reg=02 len=2 ack=1 data=4B00 tick_ms=1078658",
+    "SENSOR reg=03 len=2 ack=1 data=5000 tick_ms=1078676",
+    "SENSOR reg=00 len=2 ack=1 data=19C0 tick_ms=1078694"
+  ],
+  "CLOCKS_AFTER": [
+    "RCC_CR=03030300",
+    "RCC_CFGR=0091000F",
+    "RCC_CSR=14420003",
+    "RCC_AHBENR=0000801F",
+    "RCC_APB1ENR=10800200",
+    "RCC_APB2ENR=00000001",
+    "PWR_CR=00000800",
+    "PWR_CSR=00000008",
+    "LCD_CR=000000CD",
+    "LCD_FCR=003C0C50",
+    "LCD_SR=0000003B",
+    "ADC_CR2=00000000",
+    "ADC_CCR=00000000",
+    "SPI1_CR1=00000000",
+    "SCB_SCR=00000000"
+  ]
+}

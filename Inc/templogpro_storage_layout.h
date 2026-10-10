@@ -1,0 +1,28 @@
+#ifndef TEMPLOGPRO_STORAGE_LAYOUT_H
+#define TEMPLOGPRO_STORAGE_LAYOUT_H
+
+#include <stdint.h>
+
+#define TEMPLOGPRO_FLASH_SIZE_BYTES          (512u * 1024u)
+#define TEMPLOGPRO_FLASH_SECTOR_SIZE         4096u
+#define TEMPLOGPRO_FLASH_PAGE_SIZE           256u
+
+/* Second copy of the configuration; the sector held the unused legacy
+   settings counter before. */
+#define TEMPLOGPRO_CONFIG_B_ADDRESS          0x00000000u
+#define TEMPLOGPRO_METADATA_A_ADDRESS        0x00001000u
+#define TEMPLOGPRO_METADATA_B_ADDRESS        0x00002000u
+#define TEMPLOGPRO_RECORDS_START_ADDRESS     0x00003000u
+#define TEMPLOGPRO_CONFIG_ADDRESS            0x0007F000u
+#define TEMPLOGPRO_RECORDS_END_ADDRESS       TEMPLOGPRO_CONFIG_ADDRESS
+
+#define TEMPLOGPRO_LOG_RECORD_ENCODED_SIZE   12u
+#define TEMPLOGPRO_LOG_RECORDS_PER_SECTOR    (TEMPLOGPRO_FLASH_SECTOR_SIZE / TEMPLOGPRO_LOG_RECORD_ENCODED_SIZE)
+#define TEMPLOGPRO_LOG_RECORD_SECTOR_COUNT   ((TEMPLOGPRO_RECORDS_END_ADDRESS - TEMPLOGPRO_RECORDS_START_ADDRESS) / TEMPLOGPRO_FLASH_SECTOR_SIZE)
+#define TEMPLOGPRO_LOG_RECORD_CAPACITY       (TEMPLOGPRO_LOG_RECORDS_PER_SECTOR * TEMPLOGPRO_LOG_RECORD_SECTOR_COUNT)
+
+uint32_t templogpro_storage_is_record_address(uint32_t address);
+uint32_t templogpro_storage_record_address(uint32_t index);
+uint32_t templogpro_storage_sector_base(uint32_t address);
+
+#endif

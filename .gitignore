@@ -1,0 +1,31 @@
+# Local history, working files and personal data (kept on disk only)
+backup/
+tmp/
+Debug/
+CodexBuild/
+Zdjęcia do analizy/
+zdjecia do projektu/
+kod.txt
+raport do weryfikacji.pdf
+
+# Build outputs (Release/makefile, *.mk and objects.list stay: the terminal build uses them)
+*.o
+*.d
+*.su
+*.cyclo
+*.elf
+*.map
+*.list
+!Release/objects.list
+Release/*.bin
+Release/*.hex
+diagnostics/**/build*/
+diagnostics/**/archive/
+diagnostics/usb_power_path/*.bin
+diagnostics/usb_power_path/*.hex
+diagnostics/usb_power_path/*.o
+
+# Tooling
+__pycache__/
+*.pyc
+.metadata/
