@@ -351,6 +351,16 @@ i sprawdzony testem `lcd_segment_map_vectors.py` na obrazie.
   logger” z kreskami; opis raportu obok za pionową linią. Wgrane: bin
   `90656e4675484c8b2e6260bc3c6eca437adbfedf588b1c7be379b36a36669af7`.
 
+- 2026-10-11: dokumentacja `DOKUMENTACJA.md` + `README.md`, licencja MIT,
+  `firmware/TempLogPro.bin|hex` (bin `90656e46...`), zrzuty panelu na
+  przykładowych danych w `docs/assets/`, `tests/requirements.txt` (unicorn).
+  `build_release.ps1` poprawia bezwzględną ścieżkę skryptu linkera w
+  `Release/makefile` (kopia działa z dowolnego folderu). Publiczne repozytorium:
+  https://github.com/Bruncjusz/TempLogPro (gałąź `main`, autor commitów
+  z adresem noreply GitHuba). `.gitignore` pomija `backup/`, `tmp/`,
+  `Debug/`, `CodexBuild/`, zdjęcia robocze, `kod.txt`, PDF raportu i wyjścia
+  kompilacji. Mapa LCD: hackaday.io/project/189442.
+
 ## Znane błędy, nienaprawione
 
 - Brak.
