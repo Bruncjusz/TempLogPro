@@ -3,6 +3,8 @@
 Wersja dokumentu: 2026-10-11 · firmware **0.10.0**
 Autor projektu: **Brunon Kucharski** · opracowane we współpracy z **Codex (OpenAI)** i **Claude (Anthropic)**
 
+Instrukcja obsługi dla użytkownika: [docs/INSTRUKCJA.md](docs/INSTRUKCJA.md). Sprzęt, złącze SWD i pinout: [docs/HARDWARE.md](docs/HARDWARE.md).
+
 Ten dokument opisuje stan faktyczny projektu: co urządzenie robi, jak jest
 zbudowane, jak je budować, testować i wgrywać, co zostało zrobione i co jest
 jeszcze otwarte. Szczegółowe notatki z poszczególnych etapów są w `docs/`.

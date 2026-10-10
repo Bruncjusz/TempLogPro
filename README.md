@@ -30,7 +30,7 @@ Wersja firmware: **0.10.0** · licencja **MIT**
 
 ## Wgranie gotowego firmware
 
-1. Podłącz ST-Link do złącza SWD rejestratora (PA13/PA14, NRST, GND, 3,3 V).
+1. Podłącz ST-Link do złącza SWD **J2** na płytce (SWDIO, SWCLK, GND, 3,3 V; zdjęcie i opis w [docs/HARDWARE.md](docs/HARDWARE.md)).
 2. W STM32CubeProgrammer wgraj `firmware/TempLogPro.bin` pod adres `0x08000000`
    (tryb połączenia *Under reset*, bez *Full chip erase*).
 3. Po restarcie podłącz USB — pojawi się dysk `TEMPLOGPRO`; otwórz `TempLogPro.html` w Chrome lub Edge.
@@ -71,13 +71,17 @@ Panel HTML edytuje się w `panel/templogpro.html`; build sam generuje z niego
 | `docs/` | notatki techniczne z etapów projektu |
 | `Drivers/`, `Startup/` | biblioteki i pliki startowe STMicroelectronics |
 
-Pełna dokumentacja i raport z projektu: **[DOKUMENTACJA.md](DOKUMENTACJA.md)**.
+- **[Instrukcja obsługi](docs/INSTRUKCJA.md)** — przyciski, ekrany, raport, PDF, rozwiązywanie problemów
+- **[Sprzęt i podłączenie ST-Linka](docs/HARDWARE.md)** — złącze SWD, zdjęcie płytki, pinout procesora
+- **[Dokumentacja i raport z projektu](DOKUMENTACJA.md)** — pełny opis techniczny
 
 ## Podziękowania i źródła
 
 - Mapa pamięci LCD szkła TempTale Ultra (`temptale-ultra_LCD.pdf`) pochodzi
   z projektu [TempTale Ultra teardown & repurpose](https://hackaday.io/project/189442-temptale-ultra-teardown-repurpose)
   na Hackaday.io — dziękujemy autorowi za rozpracowanie szkła LCD.
+- Rozpoznanie płytki i złącza SWD oraz zdjęcie w [docs/HARDWARE.md](docs/HARDWARE.md):
+  [Free ARM Development Board From a Used-up Temperature Logger](https://www.instructables.com/Free-ARM-Development-Board-From-a-Used-up-Temperat/) (Instructables).
 - Biblioteki STM32 HAL, USB Device i CMSIS: STMicroelectronics / Arm, na ich własnych licencjach.
 
 ## Zastrzeżenie
