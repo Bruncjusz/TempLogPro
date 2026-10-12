@@ -13,7 +13,7 @@ offline — z wykresem, analizą przekroczeń, eksportem do PDF i ustawieniami
 urządzenia przez Web Serial.
 
 Autor: **Brunon Kucharski** · opracowane we współpracy z **Codex (OpenAI)** i **Claude (Anthropic)**
-Wersja firmware: **0.10.0** · licencja **MIT**
+Wersja firmware: **1.0.0** · licencja **MIT**
 
 ## Funkcje
 
@@ -24,7 +24,8 @@ Wersja firmware: **0.10.0** · licencja **MIT**
 - tryb STOP na baterii (~16 µA w spoczynku);
 - USB: dysk `TEMPLOGPRO` z plikami `TempLogPro.html`, `DATA.CSV`, `README.TXT`, `POWER.TXT` oraz port szeregowy do konfiguracji;
 - raport HTML offline (Chrome/Edge): werdykt, kafelki, wykres z zakresami i strefami „brak danych”, tabele, filtr pomiarów, CSV, PL/EN, motyw jasny/ciemny;
-- PDF: skrócony, standardowy i pełny, z własnym nagłówkiem, numeracją stron i polami „Uwagi / Sprawdził”.
+- PDF: skrócony, standardowy i pełny, z własnym nagłówkiem, numeracją stron i polami „Uwagi / Sprawdził”;
+- strefa czasowa i zmiana czasu: zegar w UTC (log nigdy się nie cofa), czas lokalny w `DATA.CSV` i raporcie, znaczek strefy i znaczniki zmiany czasu na wykresie, synchronizacja z komputerem lub ustawienie ręczne.
 
 <p align="center"><img src="docs/assets/panel-settings.png" width="820" alt="Ustawienia TempLogPro"></p>
 

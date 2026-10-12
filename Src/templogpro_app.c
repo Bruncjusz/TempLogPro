@@ -49,8 +49,6 @@ typedef enum
 #define APP_BACKGROUND_BATTERY_REFRESH_MS   5000u
 #define APP_MEASURE_PULSE_MS                 600u
 #define APP_MEASURE_LED_BATTERY_PULSE_MS     250u
-#define APP_RED_ALARM_ON_MS                  100u
-#define APP_RED_ALARM_CYCLE_MS              1100u
 #define APP_RED_LED_PERIOD_MS               3000u
 #define APP_RED_LED_FLASH_MS                 100u
 #define APP_RED_LED_GAP_MS                   150u
@@ -488,6 +486,20 @@ uint32_t templogpro_app_should_stop_sleep(void)
         return 0u;
     }
     return 1u;
+}
+
+/* RTC wake period for STOP. Measurements need a 1 s tick; a stopped logger only
+   has to show the alarm LED (every 3 s) or nothing at all: buttons and USB cable
+   insertion wake the MCU by interrupt, so a 60 s tick adds no visible lag. */
+uint32_t templogpro_app_stop_wake_seconds(void)
+{
+    if ((g_app_state != TEMPLOGPRO_STATE_READY) && (g_app_state != TEMPLOGPRO_STATE_PAUSE)) {
+        return 1u;
+    }
+    if ((g_app_config.led_enable != 0u) && (app_alarm_or_error_active() != 0u)) {
+        return 3u;
+    }
+    return 60u;
 }
 
 static void app_handle_button_event(TempLogProButtonEvent event, uint32_t now_ms)
@@ -1176,8 +1188,15 @@ static uint32_t app_base_icon_mask(uint32_t now_ms)
         mask |= TEMPLOGPRO_LCD_ICON_HEART;
     }
     if (app_alarm_or_error_active() != 0u) {
-        if ((now_ms % APP_RED_ALARM_CYCLE_MS) < APP_RED_ALARM_ON_MS) {
-            mask |= TEMPLOGPRO_LCD_ICON_X;
+        /* Steady X plus the small triangle(s) next to it for the alarm direction. */
+        uint16_t alarm_flags = app_alarm_history_flags();
+
+        mask |= TEMPLOGPRO_LCD_ICON_X;
+        if ((alarm_flags & TEMPLOGPRO_LOG_FLAG_TEMP_HIGH) != 0u) {
+            mask |= TEMPLOGPRO_LCD_ICON_UP;
+        }
+        if ((alarm_flags & TEMPLOGPRO_LOG_FLAG_TEMP_LOW) != 0u) {
+            mask |= TEMPLOGPRO_LCD_ICON_DOWN;
         }
         return mask;
     }

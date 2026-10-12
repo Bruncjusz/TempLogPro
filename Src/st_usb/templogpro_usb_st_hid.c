@@ -58,6 +58,7 @@ static uint32_t templogpro_usb_cable_present(void);
 
 static uint32_t g_templogpro_usb_started;
 static uint32_t g_templogpro_usb_last_retry_ms;
+static volatile uint32_t g_templogpro_usb_cable_wake;
 static uint32_t g_templogpro_usb_start_ms;
 
 extern volatile uint32_t templogpro_usb_bus_event_count;
@@ -293,6 +294,59 @@ static uint32_t templogpro_usb_fail(uint32_t status)
     templogpro_diag_set_usb(0U);
     templogpro_red_on();
     return 0U;
+}
+
+/* STOP mode cable detection: with D+ (PA12) pulled up internally, a connected
+   host's 15k pull-down drives it low, which wakes the MCU through EXTI12. Only
+   armed while the line is high, so a plugged-in host that does not enumerate
+   cannot keep the device awake (the normal retry still runs on the RTC tick). */
+uint32_t templogpro_usb_arm_cable_wake(void)
+{
+    if (g_templogpro_usb_started != 0U) {
+        return 0U;
+    }
+    TEMPLOGPRO_RCC_AHBENR |= (1U << 0);
+    TEMPLOGPRO_GPIOA_MODER &= ~(3U << 24);
+    TEMPLOGPRO_GPIOA_PUPDR = (TEMPLOGPRO_GPIOA_PUPDR & ~(3U << 24)) | (1U << 24);
+    templogpro_delay_raw(64U);
+    if ((TEMPLOGPRO_GPIOA_IDR & (1U << 12)) == 0U) {
+        TEMPLOGPRO_GPIOA_PUPDR &= ~(3U << 24);
+        return 0U;
+    }
+    __HAL_RCC_SYSCFG_CLK_ENABLE();
+    SYSCFG->EXTICR[3] &= ~SYSCFG_EXTICR4_EXTI12;
+    __HAL_RCC_SYSCFG_CLK_DISABLE();
+    g_templogpro_usb_cable_wake = 0U;
+    EXTI->RTSR &= ~EXTI_RTSR_TR12;
+    EXTI->FTSR |= EXTI_FTSR_TR12;
+    EXTI->PR = EXTI_PR_PR12;
+    EXTI->IMR |= EXTI_IMR_MR12;
+    HAL_NVIC_SetPriority(EXTI15_10_IRQn, 3U, 0U);
+    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+    return 1U;
+}
+
+uint32_t templogpro_usb_disarm_cable_wake(void)
+{
+    EXTI->IMR &= ~EXTI_IMR_MR12;
+    EXTI->FTSR &= ~EXTI_FTSR_TR12;
+    EXTI->PR = EXTI_PR_PR12;
+    HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+    TEMPLOGPRO_GPIOA_PUPDR &= ~(3U << 24);
+    return g_templogpro_usb_cable_wake;
+}
+
+void templogpro_usb_request_probe(void)
+{
+    g_templogpro_usb_last_retry_ms = HAL_GetTick() - TEMPLOGPRO_USB_RETRY_MS;
+}
+
+void EXTI15_10_IRQHandler(void)
+{
+    if ((EXTI->PR & EXTI_PR_PR12) != 0U) {
+        EXTI->PR = EXTI_PR_PR12;
+        g_templogpro_usb_cable_wake = 1U;
+    }
 }
 
 static uint32_t templogpro_usb_cable_present(void)

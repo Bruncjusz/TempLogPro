@@ -1,4 +1,5 @@
 #include "templogpro_power.h"
+#include "templogpro_app.h"
 #include "templogpro_buttons.h"
 #include "templogpro_diag.h"
 #include "templogpro_hw_bridge.h"
@@ -7,6 +8,7 @@
 
 #define TEMPLOGPRO_STOP_WAKE_MS          1000u
 #define TEMPLOGPRO_BUTTON_WAKE_GUARD_MS   250u
+#define TEMPLOGPRO_STOP_WAKE_MAX_S         60u
 #define TEMPLOGPRO_RTC_WUT_TIMEOUT     100000u
 #define TEMPLOGPRO_VDD_CACHE_MS           5000u
 #define TEMPLOGPRO_VOS_TIMEOUT          100000u
@@ -42,7 +44,7 @@ static uint16_t g_vdd_max_millivolts;
 static void power_rtc_unlock(void);
 static void power_rtc_lock(void);
 static void power_rtc_clear_wakeup_flag(void);
-static uint32_t power_rtc_wakeup_start(void);
+static uint32_t power_rtc_wakeup_start(uint32_t seconds);
 static void power_rtc_wakeup_stop(void);
 static void power_account_elapsed(void);
 static void power_cycle_counter_set(uint32_t enable);
@@ -213,6 +215,8 @@ uint32_t templogpro_power_enter_stop(void)
 {
     uint32_t now_ms = HAL_GetTick();
     uint32_t button_wakeup;
+    uint32_t wake_s = templogpro_app_stop_wake_seconds();
+    uint32_t usb_armed;
 
     if (templogpro_buttons_take_wakeup() != 0u) {
         g_stop_inhibit_until_ms = now_ms + TEMPLOGPRO_BUTTON_WAKE_GUARD_MS;
@@ -227,7 +231,10 @@ uint32_t templogpro_power_enter_stop(void)
         g_stop_deferred = power_add_u32(g_stop_deferred, 1u);
         return 0u;
     }
-    if (power_rtc_wakeup_start() == 0u) {
+    if ((wake_s == 0u) || (wake_s > TEMPLOGPRO_STOP_WAKE_MAX_S)) {
+        wake_s = 1u;
+    }
+    if (power_rtc_wakeup_start(wake_s) == 0u) {
         g_stop_deferred = power_add_u32(g_stop_deferred, 1u);
         return 0u;
     }
@@ -239,19 +246,23 @@ uint32_t templogpro_power_enter_stop(void)
     }
 
     g_rtc_wakeup = 0u;
+    usb_armed = templogpro_usb_arm_cable_wake();
     HAL_SuspendTick();
     __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
     SET_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU);
     HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
 
     power_rtc_wakeup_stop();
+    if ((usb_armed != 0u) && (templogpro_usb_disarm_cable_wake() != 0u)) {
+        templogpro_usb_request_probe();
+    }
     SystemCoreClockUpdate();
     (void)HAL_InitTick(uwTickPrio);
     HAL_ResumeTick();
 
     if (g_rtc_wakeup != 0u) {
-        uwTick += TEMPLOGPRO_STOP_WAKE_MS;
-        g_stop_sleep_ms = power_add_u32(g_stop_sleep_ms, TEMPLOGPRO_STOP_WAKE_MS);
+        uwTick += wake_s * TEMPLOGPRO_STOP_WAKE_MS;
+        g_stop_sleep_ms = power_add_u32(g_stop_sleep_ms, wake_s * TEMPLOGPRO_STOP_WAKE_MS);
         g_rtc_wakeups = power_add_u32(g_rtc_wakeups, 1u);
     }
 
@@ -364,7 +375,7 @@ static void power_rtc_clear_wakeup_flag(void)
                (RTC->ISR & RTC_ISR_INIT);
 }
 
-static uint32_t power_rtc_wakeup_start(void)
+static uint32_t power_rtc_wakeup_start(uint32_t seconds)
 {
     uint32_t timeout = TEMPLOGPRO_RTC_WUT_TIMEOUT;
 
@@ -378,7 +389,7 @@ static uint32_t power_rtc_wakeup_start(void)
         return 0u;
     }
 
-    RTC->WUTR = 0u;
+    RTC->WUTR = seconds - 1u;  /* ck_spre (1 Hz): wake after "seconds" */
     RTC->CR = (RTC->CR & ~RTC_CR_WUCKSEL) | RTC_CR_WUCKSEL_2;
     power_rtc_clear_wakeup_flag();
     EXTI->PR = EXTI_PR_PR20;

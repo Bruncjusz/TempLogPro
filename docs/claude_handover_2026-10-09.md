@@ -361,6 +361,29 @@ i sprawdzony testem `lcd_segment_map_vectors.py` na obrazie.
   `Debug/`, `CodexBuild/`, zdjęcia robocze, `kod.txt`, PDF raportu i wyjścia
   kompilacji. Mapa LCD: hackaday.io/project/189442.
 
+- 2026-10-12: oszczędzanie w stanie zatrzymanym: LCD ~75 Hz zamiast ~300 Hz
+  (`LCD_FCR_PS(2)`, ten sam stosunek PON do fazy), budzenie RTC wybierane przez
+  `templogpro_app_stop_wake_seconds()` (1 s przy pomiarach, 3 s przy alarmie
+  z diodą, 60 s przy zatrzymanym loggerze), wybudzanie przez podłączenie USB
+  (EXTI12 na D+ z podciągnięciem, uzbrajane tylko gdy linia jest wysoko).
+  Alarm na LCD: X świeci stale + trójkąty ↑/↓ kierunku. Strefa czasowa:
+  zegar i rekordy w UTC, `Src/templogpro_tz.c` (reguły jak POSIX TZ),
+  konfiguracja v6 (96 B, `tz_*`), `DATA.CSV` z czasem lokalnym i kolumną
+  `UTC_Offset` (linia 48 B), JSON raportu z `tz*`, panel: grupa „Czas i strefa
+  czasowa”, znaczek strefy, znaczniki zmiany czasu (Z001/Z002), SET TIME w UTC.
+  Testy: `tests/tz_vectors.py`, scenariusz zmiany czasu w
+  `tests/panel_edge_vectors.cjs`. Urządzenie zsynchronizowane: Europe/Warsaw.
+  Wgrane: bin `a3c45fdfeb82c96446470f02be727c187d442f6d6d7cab328f5633beeebfaf95`.
+  Do zmierzenia przez użytkownika: prąd w stanie zatrzymanym, wygląd LCD przy
+  75 Hz. Znane (starsze): po zmianie układu wirtualnego dysku (START/STOP,
+  zapis ustawień) Windows może pokazywać nieaktualną zawartość plików do
+  ponownego podłączenia USB.
+
+- 2026-10-12: **wersja 1.0.0** (`TEMPLOGPRO_FW_VERSION`), odstęp pod opisem
+  strefy w Ustawieniach. Wgrane: bin
+  `8a6bd46110432ab531fbd272278bc923c64e31c3db13fdc7782f7cb5ce8aeefa`
+  (także `firmware/TempLogPro.bin|hex`). GitHub: tag `v1.0.0` + Release.
+
 ## Znane błędy, nienaprawione
 
 - Brak.

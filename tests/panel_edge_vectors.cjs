@@ -98,5 +98,48 @@ for (const width of [1440, 480]) {
   check(r.overflow <= 0, `no horizontal overflow at ${width}px (${r.overflow}px)`);
   check(!r.asciiPolish, 'Polish text has diacritics');
 }
+// Time zone: Europe/Warsaw log across the switch to winter time (2026-10-25 01:00 UTC),
+// local 02:00-02:59 appears twice (+02:00, then +01:00).
+const tzRows = [['00001', '2026-10-25', '02:40:00', '+000.000', 'R001', '+02:00']];
+for (let i = 0; i < 6; i++) {
+  const utc = Date.UTC(2026, 9, 25, 0, 40 + i * 10), off = utc < Date.UTC(2026, 9, 25, 1) ? 120 : 60;
+  const d = new Date(utc + off * 60000), p2 = n => String(n).padStart(2, '0');
+  tzRows.push([String(i + 2).padStart(5, '0'), `${d.getUTCFullYear()}-${p2(d.getUTCMonth() + 1)}-${p2(d.getUTCDate())}`,
+    `${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}:00`, '+025.000', 'M000', off === 120 ? '+02:00' : '+01:00']);
+}
+const tzCsv = 'Sequence,Date,Time,Temperature_C,Code,UTC_Offset\r\n' + tzRows.map(r => r.join(',')).join('\r\n') + '\r\n';
+const tzConfig = {interval: 600, low: 2, high: 30, battery: 1, lcd: 0, led: 1, usbLogging: 1, lcdMenu: 4095, records: 7,
+                  capacity: 1000, unit: 0, tzName: 'Europe/Warsaw', tzStd: 60, tzDst: 60, tzStart: [3, 5, 0, 120], tzEnd: [10, 5, 0, 180]};
+const tzProbe = `<script>setTimeout(()=>{let r={};try{
+  r.tzEvents=tzEvents.map(e=>e.code+':'+e.from+'>'+e.to);
+  r.monotonic=temps.every((q,i)=>!i||q.ms>temps[i-1].ms);
+  r.dupLocal=temps.filter(q=>q.time.startsWith('02:')).length;
+  r.badge=$('tzBadge').textContent;
+  r.roundTrip=temps.every(q=>{setInputMs('fromDt',q.ms);return readInputMs($('fromDt'))===q.ms});r.typed=inputToMs('2026-10-25T04:00:00')===Date.UTC(2026,9,25,3);
+  r.zoneRule=JSON.stringify(zoneRule('Europe/Warsaw'));
+  $('cfgTz').value='Europe/Warsaw';$('cfgDstMode').value='auto';$('cfgTz').onchange();r.payload=serialPayload('2026-07-01 10:00:00');
+  r.clockUtc=utcStamp(clockToUtc('2026-07-01T12:00:00',uiZone()));
+  r.ny=JSON.stringify(zoneRule('America/New_York'));r.syd=JSON.stringify(zoneRule('Australia/Sydney'));
+  r.legend=$('chartBigLegend').textContent;r.info=$('deviceInfo').textContent;
+  r.markers=[...document.querySelectorAll('#chartBig text')].filter(e=>/CZAS ZIMOWY/.test(e.textContent)).length;r.texts=[...document.querySelectorAll('#chartBig text')].map(e=>e.textContent).join('|').slice(0,300);
+}catch(e){r.error=e.message+' '+e.stack}document.body.setAttribute('data-probe',JSON.stringify(r))},300)</script>`;
+fs.writeFileSync(page, literal('HTML_PREFIX') + tzCsv + '</script><script id="config-data" type="application/json">' +
+  JSON.stringify(tzConfig) + '</script><script>' + literal('HTML_SUFFIX') + tzProbe);
+{
+  const z = run(1440);
+  check(!z.error, 'tz script error: ' + z.error);
+  check(JSON.stringify(z.tzEvents) === '["Z002:120>60"]', 'one switch to winter time detected: ' + JSON.stringify(z.tzEvents));
+  check(z.monotonic && z.dupLocal >= 4, 'repeated local hour stays in order on the UTC timeline');
+  check(z.badge.includes('UTC+01:00') && z.badge.includes('Europe/Warsaw'), 'time zone badge: ' + z.badge);
+  check(z.roundTrip && z.typed, 'range fields keep exact instants in the repeated hour; typed local time converts to UTC');
+  check(z.zoneRule === '{"name":"Europe/Warsaw","std":60,"dst":60,"start":[3,5,0,120],"end":[10,5,0,180]}', 'EU rule derived from the browser: ' + z.zoneRule);
+  check(z.ny === '{"name":"America/New_York","std":-300,"dst":60,"start":[3,2,0,120],"end":[11,1,0,120]}', 'US rule: ' + z.ny);
+  check(z.syd === '{"name":"Australia/Sydney","std":600,"dst":60,"start":[10,1,0,120],"end":[4,1,0,180]}', 'AU rule: ' + z.syd);
+  check(z.payload.includes('SET TIME 2026-07-01 10:00:00\n') && z.payload.includes('tz_name=Europe/Warsaw\n') &&
+        z.payload.includes('tz_offset_min=60\n') && z.payload.includes('tz_dst_start=3.5.0.120\n') && z.payload.includes('tz_dst_end=10.5.0.180\n'), 'payload carries UTC time and the zone');
+  check(z.clockUtc === '2026-07-01 10:00:00', 'manual local clock converted to UTC: ' + z.clockUtc);
+  check(z.legend.includes('ZMIANA CZASU') && z.markers === 1, 'chart marks the time change: ' + z.legend + ' markers=' + z.markers + ' texts=' + z.texts);
+  check(z.info.includes('Europe/Warsaw') && z.info.includes('ostatnia niedziela marca 02:00'), 'device info describes the zone and rule');
+}
 fs.rmSync(dir, {recursive: true, force: true});
-console.log(`PASS panel in Edge: ${checks} checks at 1440 and 480 px`);
+console.log(`PASS panel in Edge: ${checks} checks at 1440 and 480 px, time zone scenario`);

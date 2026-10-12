@@ -16,6 +16,7 @@
 "./Src/templogpro_rtc.o"
 "./Src/templogpro_sensor.o"
 "./Src/templogpro_storage_layout.o"
+"./Src/templogpro_tz.o"
 "./Src/templogpro_usb_files.o"
 "./Src/st_usb/hal/stm32l1xx_hal.o"
 "./Src/st_usb/hal/stm32l1xx_hal_cortex.o"

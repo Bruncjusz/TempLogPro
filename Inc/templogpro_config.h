@@ -16,6 +16,17 @@
 #define TEMPLOGPRO_UNIT_CELSIUS              0u
 #define TEMPLOGPRO_UNIT_FAHRENHEIT           1u
 
+/* Daylight-saving transition: week (1-4, 5 = last) of month, weekday (0 = Sunday), minute of the local day. */
+typedef struct
+{
+    uint8_t month;
+    uint8_t week;
+    uint8_t weekday;
+    uint16_t minute;
+} TempLogProDstRule;
+
+#define TEMPLOGPRO_TZ_NAME_SIZE              32u
+
 typedef struct
 {
     uint32_t interval_seconds;
@@ -28,6 +39,11 @@ typedef struct
     uint32_t usb_logging_enable;
     uint32_t lcd_menu_mask;
     uint32_t temperature_unit;
+    int32_t tz_std_offset_min;            /* standard (winter) UTC offset */
+    int32_t tz_dst_delta_min;             /* summer shift, 0 = no daylight saving */
+    TempLogProDstRule tz_dst_start;       /* local standard time */
+    TempLogProDstRule tz_dst_end;         /* local daylight time */
+    char tz_name[TEMPLOGPRO_TZ_NAME_SIZE]; /* IANA name for the report, e.g. Europe/Warsaw */
 } TempLogProConfig;
 
 uint32_t templogpro_config_init(void);

@@ -72,6 +72,7 @@ static const DigitBits DIGIT_BIT_POS[3] = {
 #define LCD_CR_VSEL_INTERNAL 0x00000000u /* confirmed on this board */
 
 #define LCD_FCR_DIV31         0x003C0000u
+#define LCD_FCR_PS(n)         (((uint32_t)(n) & 0xFu) << 22)
 #define LCD_FCR_CONTRAST(n)   (((uint32_t)(n) & 0x7u) << 10)
 #define LCD_FCR_DEAD(n)       (((uint32_t)(n) & 0x7u) << 7)
 #define LCD_FCR_PON(n)        (((uint32_t)(n) & 0x7u) << 4)
@@ -269,8 +270,10 @@ static void init_lcd(void)
     LCD_CLR = LCD_SR_UDD_BIT;
     LCD_SR |= LCD_SR_UDR_BIT;
 
-    /* Keep the brightness verified on this glass: DEAD=0, PON=5. */
-    LCD_FCR = LCD_FCR_DIV31 | LCD_FCR_CONTRAST(3) | LCD_FCR_DEAD(0) | LCD_FCR_PON(5);
+    /* Brightness verified on this glass: DEAD=0, PON=5. PS=2 divides the
+       LSI-clocked frame rate from ~300 Hz to ~75 Hz; PON scales with the
+       prescaler, so the drive pulse keeps the same share of each phase. */
+    LCD_FCR = LCD_FCR_PS(2) | LCD_FCR_DIV31 | LCD_FCR_CONTRAST(3) | LCD_FCR_DEAD(0) | LCD_FCR_PON(5);
     if (lcd_wait_register(&LCD_SR, LCD_SR_FCRSF_BIT,
                           LCD_SR_FCRSF_BIT, LCD_READY_TIMEOUT_MS) == 0u) {
         return;

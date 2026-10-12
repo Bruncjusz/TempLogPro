@@ -7,12 +7,14 @@
 #include "templogpro_rtc.h"
 #include "templogpro_usb_msc_storage.h"
 #include "templogpro_version.h"
+#include "templogpro_tz.h"
 #include <string.h>
 
-#define CSV_RECORD_LINE_LEN      41u
-#define HTML_CONFIG_BLOCK_SIZE   320u
+#define CSV_RECORD_LINE_LEN      48u
+#define HTML_CONFIG_BLOCK_SIZE   448u
 
-static const char CSV_HEADER[] = "Sequence,Date,Time,Temperature_C,Code\r\n";
+/* Date/Time are local time (stored UTC + UTC_Offset of that moment). */
+static const char CSV_HEADER[] = "Sequence,Date,Time,Temperature_C,Code,UTC_Offset\r\n";
 /* HTML_PREFIX and HTML_SUFFIX: edit panel/templogpro.html, then run tools/gen_panel.py. */
 #include "templogpro_panel_html.inc"
 
@@ -22,6 +24,7 @@ typedef struct
     uint32_t record_count;
     uint32_t csv_size;
     TempLogProLoggerInfo logger_info;
+    TempLogProConfig config;  /* time zone used for every CSV line of this snapshot */
 } UsbSnapshot;
 
 static UsbSnapshot g_snapshot;
@@ -67,6 +70,7 @@ void templogpro_usb_files_snapshot_ensure(void)
     } else {
         g_snapshot.record_count = 0u;
     }
+    templogpro_config_get(&g_snapshot.config);
     g_snapshot.csv_size = (uint32_t)(sizeof(CSV_HEADER) - 1u) +
                           (g_snapshot.record_count * CSV_RECORD_LINE_LEN);
     g_snapshot.valid = 1u;
@@ -364,6 +368,26 @@ static uint32_t html_copy(uint32_t file_offset, uint8_t *destination, uint32_t r
     return requested_length - remaining;
 }
 
+static uint32_t append_i32_json(char *buf, uint32_t pos, uint32_t max, int32_t value)
+{
+    if (value < 0) {
+        pos = append_str(buf, pos, max, "-");
+        value = -value;
+    }
+    return append_u32(buf, pos, max, (uint32_t)value);
+}
+
+static uint32_t append_rule_json(char *buf, uint32_t pos, uint32_t max, const TempLogProDstRule *rule)
+{
+    pos = append_u32(buf, pos, max, rule->month);
+    pos = append_str(buf, pos, max, ",");
+    pos = append_u32(buf, pos, max, rule->week);
+    pos = append_str(buf, pos, max, ",");
+    pos = append_u32(buf, pos, max, rule->weekday);
+    pos = append_str(buf, pos, max, ",");
+    return append_u32(buf, pos, max, rule->minute);
+}
+
 static void html_config_block_build(char *buf, uint32_t len)
 {
     TempLogProConfig config;
@@ -398,7 +422,17 @@ static void html_config_block_build(char *buf, uint32_t len)
     pos = append_u32(buf, pos, len, config.led_enable);
     pos = append_str(buf, pos, len, ",\"unit\":");
     pos = append_u32(buf, pos, len, config.temperature_unit);
-    pos = append_str(buf, pos, len, "}</script><script>");
+    pos = append_str(buf, pos, len, ",\"tzName\":\"");
+    pos = append_str(buf, pos, len, config.tz_name);
+    pos = append_str(buf, pos, len, "\",\"tzStd\":");
+    pos = append_i32_json(buf, pos, len, config.tz_std_offset_min);
+    pos = append_str(buf, pos, len, ",\"tzDst\":");
+    pos = append_i32_json(buf, pos, len, config.tz_dst_delta_min);
+    pos = append_str(buf, pos, len, ",\"tzStart\":[");
+    pos = append_rule_json(buf, pos, len, &config.tz_dst_start);
+    pos = append_str(buf, pos, len, "],\"tzEnd\":[");
+    pos = append_rule_json(buf, pos, len, &config.tz_dst_end);
+    pos = append_str(buf, pos, len, "]}</script><script>");
     (void)pos;
 }
 
@@ -413,7 +447,7 @@ static void readme_build(char *buf, uint32_t len)
     pos = append_str(buf, pos, len, "Developed in collaboration with OpenAI Codex and Anthropic Claude.\r\n\r\n");
     pos = append_str(buf, pos, len, "Files:\r\n");
     pos = append_str(buf, pos, len, "- TempLogPro.html  report, chart, data and settings (offline, Chrome/Edge)\r\n");
-    pos = append_str(buf, pos, len, "- DATA.CSV         all entries for Excel, LibreOffice or Python\r\n");
+    pos = append_str(buf, pos, len, "- DATA.CSV         all entries, local time + UTC_Offset column\r\n");
     pos = append_str(buf, pos, len, "- POWER.TXT        live power and sleep diagnostics\r\n");
     pos = append_str(buf, pos, len, "- README.TXT       this file\r\n\r\n");
     pos = append_str(buf, pos, len, "CSV codes:\r\n");
@@ -464,11 +498,19 @@ static void csv_make_line(uint32_t index, char *line)
 {
     TempLogProLogRecord record;
     TempLogProDateTime dt;
+    int32_t offset_min = 0;
+    uint32_t offset_abs;
 
     memset(line, '0', CSV_RECORD_LINE_LEN);
-    if ((index >= g_snapshot.record_count) ||
-        (templogpro_logger_read_record(index, &record) == 0u) ||
-        (templogpro_rtc_timestamp_to_datetime(record.timestamp, &dt) == 0u)) {
+    uint32_t have_record = ((index < g_snapshot.record_count) &&
+                            (templogpro_logger_read_record(index, &record) != 0u)) ? 1u : 0u;
+
+    if (have_record != 0u) {
+        offset_min = templogpro_tz_offset_minutes(&g_snapshot.config, record.timestamp);
+    }
+    if ((have_record == 0u) ||
+        (templogpro_rtc_timestamp_to_datetime((uint32_t)((int32_t)record.timestamp + (offset_min * 60)), &dt) == 0u)) {
+        offset_min = 0;
         dt.year = 1970u;
         dt.month = 1u;
         dt.day = 1u;
@@ -489,8 +531,14 @@ static void csv_make_line(uint32_t index, char *line)
     put_temp_x256(&line[26], record.temperature_x256);
     line[34] = ',';
     put_code4(&line[35], record.flags);
-    line[39] = '\r';
-    line[40] = '\n';
+    line[39] = ',';
+    offset_abs = (uint32_t)((offset_min < 0) ? -offset_min : offset_min);
+    line[40] = (offset_min < 0) ? '-' : '+';
+    put_dec(&line[41], 2u, offset_abs / 60u);
+    line[43] = ':';
+    put_dec(&line[44], 2u, offset_abs % 60u);
+    line[46] = '\r';
+    line[47] = '\n';
 }
 
 static void put_dec(char *dst, uint32_t digits, uint32_t value)

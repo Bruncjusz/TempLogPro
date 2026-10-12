@@ -32,5 +32,6 @@ uint32_t templogpro_app_clear_logger(void);
 TempLogProState templogpro_app_get_state(void);
 uint32_t templogpro_app_should_idle_sleep(void);
 uint32_t templogpro_app_should_stop_sleep(void);
+uint32_t templogpro_app_stop_wake_seconds(void);
 
 #endif

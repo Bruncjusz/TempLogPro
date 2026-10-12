@@ -1,6 +1,6 @@
 # TempLogPro — instrukcja obsługi
 
-Firmware 0.10.0 · [README](../README.md) · [Dokumentacja techniczna](../DOKUMENTACJA.md) · [Sprzęt i podłączenie ST-Linka](HARDWARE.md)
+Firmware 1.0.0 · [README](../README.md) · [Dokumentacja techniczna](../DOKUMENTACJA.md) · [Sprzęt i podłączenie ST-Linka](HARDWARE.md)
 
 TempLogPro to rejestrator temperatury: mierzy temperaturę w stałych odstępach,
 zapisuje pomiary w pamięci, ostrzega o przekroczeniu ustawionego zakresu,
@@ -52,7 +52,7 @@ Kolejność na urządzeniu (niektóre można ukryć w ustawieniach):
 | --- | --- |
 | ✔ (ptaszek) | wszystko w porządku, brak alarmu |
 | ♥ (serce) + zielona dioda | właśnie zapisano pomiar (mignięcie przy każdym pomiarze) |
-| ✖ (krzyżyk) migający | w bieżącym zapisie było przekroczenie zakresu |
+| ✖ (krzyżyk) świecący | w bieżącym zapisie było przekroczenie zakresu |
 | czerwona dioda, dwa błyski co 3 s | alarm |
 | strzałka ↑ / ↓ | kierunek przekroczenia (za ciepło / za zimno) |
 | znak STOP | zapis jest zatrzymany |
@@ -71,7 +71,8 @@ widać, że przekroczenie się zdarzyło.
 3. Przejdź do zakładki **Ustawienia** i kliknij **Połącz z urządzeniem**
    (wybierz port TempLogPro / „USB Serial Device”).
 4. Ustaw interwał pomiaru, progi alarmu, jednostkę i pozostałe opcje.
-5. Zaznacz **Ustaw datę i godzinę z komputera** i kliknij **Zapisz w urządzeniu**.
+5. W grupie **Czas i strefa czasowa** kliknij **Synchronizuj z komputerem**
+   (ustawia zegar i strefę), potem **Zapisz w urządzeniu**.
 6. W karcie **Logger** kliknij **Start** albo odłącz urządzenie i przytrzymaj
    **START** przez 3 s.
 
@@ -89,6 +90,9 @@ wewnętrzny zegar może się z czasem spieszyć lub spóźniać.
 | Jednostka temperatury | °C lub °F na wyświetlaczu (raport ma osobny przełącznik) |
 | Ekran po starcie | który ekran pokazać po włączeniu |
 | Diody LED | włączone / wyłączone (wyłączenie oszczędza baterię) |
+| Strefa czasowa | strefa, w której pokazywany jest czas (np. Europe/Warsaw) |
+| Zmiana czasu | automatycznie wg strefy, ręcznie (własne dni przejścia na czas letni i zimowy) albo bez zmiany |
+| Data i godzina | ręczne ustawienie zegara w czasie lokalnym wybranej strefy (przycisk **Ustaw zegar**) |
 | Oszczędzanie energii na baterii | zalecane włączone |
 | Praca na zasilaniu USB | *Pomiary i logowanie* albo *Tylko raporty i ustawienia* (wtedy przy USB zapis jest wstrzymany) |
 | Ekrany w menu LCD | które ekrany są dostępne przyciskami |
@@ -112,6 +116,9 @@ skopiowania.
   zdarzenia i wszystkie pomiary (z filtrem i stronami). **Pobierz CSV** zapisuje
   dane do Excela.
 - **Informacje** — dane urządzenia i pamięci.
+- Znaczek strefy (np. **UTC+02:00 Europe/Warsaw · czas letni**) pokazuje, w jakiej
+  strefie są godziny w raporcie. Fioletowa linia **CZAS LETNI / CZAS ZIMOWY**
+  na wykresie oznacza zmianę czasu.
 - Szare pole **BRAK DANYCH** na wykresie oznacza przerwę w zapisie, np. gdy
   urządzenie było wyłączone albo zmieniono zegar.
 
@@ -162,7 +169,8 @@ ekran **CLR** i oba przyciski przez 3 s. Przed czyszczeniem zapisz raport lub
 | „Połącz z urządzeniem” nie działa | użyj Chrome lub Edge; zamknij inne programy korzystające z portu COM; odśwież stronę |
 | Start z panelu odrzucony (`E007`) | w Ustawieniach ustaw *Praca na zasilaniu USB: Pomiary i logowanie* albo odłącz USB i wystartuj przyciskiem |
 | Na wyświetlaczu `Err` | odłącz i podłącz zasilanie; jeśli wraca — zgłoś problem, nie czyść pamięci przed zrobieniem kopii |
-| Zła data w raporcie | ustaw zegar z komputera (Ustawienia → Ustaw datę i godzinę) |
+| Zła data w raporcie | Ustawienia → Czas i strefa czasowa → **Synchronizuj z komputerem** |
+| Zmiana czasu w złym dniu | Ustawienia → Zmiana czasu: **Ręcznie** i ustaw dni przejścia |
 | Krzyżyk miga, choć temperatura jest dobra | to pamiątka po wcześniejszym przekroczeniu; zniknie po wyczyszczeniu pamięci |
 | Windows pokazuje starą nazwę pliku | odłącz i podłącz USB |
 

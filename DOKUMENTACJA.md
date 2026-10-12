@@ -1,6 +1,6 @@
 # TempLogPro — dokumentacja i raport z projektu
 
-Wersja dokumentu: 2026-10-11 · firmware **0.10.0**
+Wersja dokumentu: 2026-10-12 · firmware **1.0.0**
 Autor projektu: **Brunon Kucharski** · opracowane we współpracy z **Codex (OpenAI)** i **Claude (Anthropic)**
 
 Instrukcja obsługi dla użytkownika: [docs/INSTRUKCJA.md](docs/INSTRUKCJA.md). Sprzęt, złącze SWD i pinout: [docs/HARDWARE.md](docs/HARDWARE.md).
@@ -33,7 +33,7 @@ Urządzenie:
 - raport HTML działa całkowicie offline w Chrome/Edge: wykres, przekroczenia,
   dane, ustawienia urządzenia przez Web Serial i eksport do PDF.
 
-**Stan na 2026-10-11:** firmware 0.10.0 wgrane i działające na urządzeniu,
+**Stan na 2026-10-12:** firmware 1.0.0 wgrane i działające na urządzeniu,
 wszystkie testy automatyczne przechodzą, panel i raport PDF zaakceptowane przez
 użytkownika. Najważniejszy otwarty problem: spadek napięcia baterii przy
 podłączonym USB (rozdział 12).
@@ -102,7 +102,8 @@ stanu. Temperatura na LCD może być w °C albo °F (dane w pamięci zawsze w °
 - **Serce na LCD + zielona dioda**: jedno wspólne mignięcie przy każdym
   zapisanym pomiarze (600 ms na USB, 250 ms na baterii).
 - **Ptaszek**: brak alarmu w bieżącym logu.
-- **X na LCD**: alarm w bieżącym logu (zatrzaśnięty do CLR), miga co 1,1 s.
+- **X na LCD**: alarm w bieżącym logu (zatrzaśnięty do CLR), świeci na stałe;
+  obok małe trójkąty ↑ / ↓ pokazują kierunek przekroczenia.
 - **Czerwona dioda**: przy alarmie dwa krótkie błyski co 3 s.
 - **Strzałki ↑/↓** na ekranie bezczynności: kierunek przekroczenia.
 - **Znak STOP**: logger nie zapisuje.
@@ -167,7 +168,7 @@ zakres widoczny na wykresie.
 | Plik | Zawartość |
 | --- | --- |
 | `TempLogPro.html` | raport i panel (alias 8.3: `TEMPLO~1.HTM`) |
-| `DATA.CSV` | `Sequence,Date,Time,Temperature_C,Code` — wszystkie wpisy |
+| `DATA.CSV` | `Sequence,Date,Time,Temperature_C,Code,UTC_Offset` — wszystkie wpisy; Date/Time w czasie lokalnym, `UTC_Offset` np. `+02:00` |
 | `README.TXT` | krótka instrukcja, autor, kody |
 | `POWER.TXT` | diagnostyka zasilania i uśpienia (programowa, nie pomiar prądu) |
 
@@ -191,7 +192,7 @@ szeregowy „USB Serial Device (COMx)”.
 
 ## 6. Konfiguracja
 
-Format v5 (48 B), dwie kopie w Winbond (A `0x7F000`, B `0x00000`), wygrywa
+Format v6 (96 B), dwie kopie w Winbond (A `0x7F000`, B `0x00000`), wygrywa
 poprawna kopia z wyższym numerem `generation`. Zapis zawsze nadpisuje kopię
 nieaktualną, więc przerwany zapis zostawia poprzednie ustawienia.
 
@@ -206,11 +207,38 @@ nieaktualną, więc przerwany zapis zostawia poprzednie ustawienia.
 | `led_enable` | 0/1 | diody |
 | `temperature_unit` | C/F | jednostka na LCD |
 | `pdf_enable` | 0/1 | pole historyczne |
+| `tz_name` | do 31 znaków | strefa IANA do raportu, np. `Europe/Warsaw` |
+| `tz_offset_min` | −720…840 (co 15) | przesunięcie czasu zimowego (standardowego) od UTC |
+| `tz_dst_min` | 0…120 | przesunięcie czasu letniego (0 = bez zmiany czasu) |
+| `tz_dst_start` / `tz_dst_end` | `miesiąc.tydzień.dzień.minuta` | początek czasu letniego (czas zimowy) i zimowego (czas letni); tydzień 5 = ostatni, dzień 0 = niedziela, np. `3.5.0.120` |
 
 Starsze formaty v1–v4 są czytane automatycznie. Starsze firmware nie odczyta
 v5 — przed cofnięciem firmware zrób zrzut pamięci.
 
 ---
+
+### Czas i strefa czasowa
+
+Zegar urządzenia i wszystkie rekordy są w **UTC**, więc log nigdy się nie
+cofa, także przy zmianie czasu na zimowy. Czas lokalny liczy się dopiero przy
+tworzeniu `DATA.CSV` i raportu: przesunięcie standardowe + ewentualne
+przesunięcie letnie według reguły „n-ta niedziela miesiąca o godzinie”
+(jak POSIX TZ, działa też na półkuli południowej). Reguła jest zapisana
+w konfiguracji, więc zmiany czasu w kolejnych latach liczą się same.
+
+- **Synchronizuj z komputerem** (Ustawienia → Czas i strefa czasowa) wysyła
+  czas UTC (`SET TIME`) i strefę komputera z regułą odczytaną z przeglądarki.
+- **Ręcznie**: wybór strefy, daty i godziny lokalnej oraz własnych momentów
+  przejścia na czas letni i zimowy (np. gdy reguła przeglądarki nie pasuje).
+- **Raport**: znaczek strefy (np. `UTC+02:00 Europe/Warsaw · czas letni`),
+  strefa w opisie wykresu i nagłówku PDF, fioletowa linia „CZAS LETNI /
+  CZAS ZIMOWY” na wykresie i zdarzenia `Z001` / `Z002` w tabeli zdarzeń.
+- Godzina powtarzana przy przejściu na czas zimowy ma w CSV dwa różne
+  `UTC_Offset`, więc kolejność wpisów jest jednoznaczna.
+- Wpisy sprzed firmware 1.0.0 (bez strefy) zostały zapisane w czasie lokalnym
+  i po ustawieniu strefy wyświetlają się przesunięte o jej przesunięcie.
+- Zegar zatrzymuje się bez zasilania i pracuje na wewnętrznym oscylatorze
+  LSI, więc po utracie zasilania trzeba go zsynchronizować ponownie.
 
 ## 7. Protokół USB CDC (Web Serial)
 
@@ -261,7 +289,10 @@ punktach przerwania zasilania). Opis: `docs/storage_format_v3.md`.
 | pomiar | ~0,97 mA |
 | bateria przy podłączonym USB | 14–16 mA, spadek napięcia baterii z 3,0 V do ~2,1 V (problem otwarty) |
 
-Rozwiązania w firmware: STOP z budzeniem z RTC co 1 s, Winbond w deep
+Rozwiązania w firmware: STOP z budzeniem z RTC co 1 s w czasie pomiarów,
+a przy zatrzymanym loggerze co 60 s (co 3 s, gdy miga dioda alarmu);
+przyciski i podłączenie kabla USB (przerwanie na D+) budzą od razu;
+wyświetlacz odświeżany ~75 Hz zamiast ~300 Hz; Winbond w deep
 power-down (`B9h`) i bramkowany SPI, ADC tylko na czas odczytu, czujnik
 w shutdown/one-shot, harmonogram pomiarów trzymający siatkę od START,
 heartbeat skrócony na baterii. Notatki: `docs/battery_*.md`,
@@ -338,7 +369,8 @@ kasuj Winbond ani nie rób mass erase bez świadomej decyzji i zrzutu pamięci.
 | `flash_usb_guard_vectors.py` | osłona SPI/USB (36) |
 | `button_fsm_vectors.py`, `rtc_monotonic_vectors.py`, `power_accounting_vectors.py`, `logger_runtime_vectors.py` | logika pomocnicza |
 | `module_probe_*.py` | obrazy diagnostyczne |
-| `panel_edge_vectors.cjs` | panel w Edge przy 1440 i 480 px (42 sprawdzenia) |
+| `tz_vectors.py` | prawdziwy kod stref czasowych: przesunięcia wokół zmian czasu (UE, USA, Australia) |
+| `panel_edge_vectors.cjs` | panel w Edge przy 1440 i 480 px oraz scenariusz zmiany czasu (54 sprawdzenia) |
 
 ---
 
@@ -370,6 +402,7 @@ kasuj Winbond ani nie rób mass erase bez świadomej decyzji i zrzutu pamięci.
 | 2026-10-09 | mapa LCD wg dokumentacji szkła, format zapisu v3 odporny na reset, podział `main.c` na sterowniki, menu LCD i °F (Claude) |
 | 2026-10-10 | nowy panel i raport PDF, wspólny heartbeat serca i diody, wersja 0.10.0 w jednym miejscu (Claude) |
 | 2026-10-10/11 | rebranding na TempLogPro: logo, nazwy, plik `TempLogPro.html`, nazwy w kodzie; nowy rytm diody alarmu (Claude) |
+| 2026-10-12 | **wersja 1.0.0**: strefa czasowa i zmiana czasu (zegar w UTC, czas lokalny w CSV i raporcie), niższy pobór przy zatrzymanym loggerze, stały X ze strzałkami kierunku alarmu (Claude) |
 
 Szczegółowy dziennik zmian z sumami SHA-256 wgranych obrazów:
 `docs/claude_handover_2026-10-09.md`.

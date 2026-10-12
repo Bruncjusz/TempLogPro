@@ -111,11 +111,12 @@ def info(ptr,b,c):
     d.uc.mem_write(ptr,struct.pack('<14I',*values))
     return 1
 d.addresses[symbols['templogpro_logger_get_info']]=info
-prefix=bytes(d.uc.mem_read(symbols['HTML_PREFIX'],40000)).split(b'\0')[0]
+prefix=bytes(d.uc.mem_read(symbols['HTML_PREFIX'],120000)).split(b'\0')[0]
 offset=len(prefix)+d.call('templogpro_csv_get_size')
-check(d.call('templogpro_html_read',offset,OUT,320)==320)
-text=bytes(d.uc.mem_read(OUT,320)).decode()
+check(d.call('templogpro_html_read',offset,OUT,448)==448)
+text=bytes(d.uc.mem_read(OUT,448)).decode()
 cfg=json.loads(text.split('application/json">')[1].split('</script>')[0])
 check(cfg['lcdMenu']==4095 and cfg['capacity']==42284 and cfg['records']==1405)
+check(cfg['tzName']=='' and cfg['tzStd']==0 and cfg['tzDst']==0 and cfg['tzStart']==[0,0,0,0])
 
 print(f'PASS action cancellation / menu / capacity: {checks} checks')

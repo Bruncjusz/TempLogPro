@@ -6,15 +6,18 @@
 #include <string.h>
 
 #define CONFIG_MAGIC                0x54434647u
-#define CONFIG_VERSION              5u
+#define CONFIG_VERSION              6u
+#define CONFIG_UNIT_VERSION         5u
 #define CONFIG_MENU_VERSION         4u
 #define CONFIG_USB_VERSION          3u
 #define CONFIG_LED_VERSION          2u
 #define CONFIG_LEGACY_VERSION       1u
-#define CONFIG_ENCODED_SIZE         48u
+#define CONFIG_ENCODED_SIZE         96u
+#define CONFIG_V5_CRC_OFFSET        46u
 #define CONFIG_LEGACY_CRC_OFFSET    38u
 #define CONFIG_V4_CRC_OFFSET        42u
-#define CONFIG_CRC_OFFSET           46u
+#define CONFIG_CRC_OFFSET           94u
+#define CONFIG_TZ_NAME_OFFSET       62u
 #define CONFIG_DEFAULT_TEMP_LOW     (-40 * 256)
 #define CONFIG_DEFAULT_TEMP_HIGH    (60 * 256)
 #define CONFIG_LEGACY_TEMP_LOW      (2 * 256)
@@ -49,6 +52,14 @@ static void put_u32(uint8_t *buf, uint32_t offset, uint32_t value);
 static uint16_t get_u16(const uint8_t *buf, uint32_t offset);
 static uint32_t get_u32(const uint8_t *buf, uint32_t offset);
 static void encode_config(const StoredConfig *config, uint8_t *raw);
+static void encode_rule(uint8_t *raw, const TempLogProDstRule *rule);
+static void decode_rule(const uint8_t *raw, TempLogProDstRule *rule);
+static uint32_t tz_rule_sane(const TempLogProDstRule *rule);
+static uint32_t append_i32(char *buf, uint32_t pos, uint32_t max, int32_t value);
+static uint32_t append_rule(char *buf, uint32_t pos, uint32_t max, const TempLogProDstRule *rule);
+static uint32_t parse_i32_value(const uint8_t *text, uint32_t len, int32_t *value);
+static uint32_t parse_rule_value(const uint8_t *text, uint32_t len, TempLogProDstRule *rule);
+static uint32_t parse_name_value(const uint8_t *text, uint32_t len, char *name);
 static uint32_t decode_config(const uint8_t *raw, StoredConfig *config);
 static void migrate_legacy_defaults(StoredConfig *config);
 static uint32_t config_is_sane(const TempLogProConfig *config);
@@ -169,6 +180,11 @@ void templogpro_config_defaults(TempLogProConfig *config)
     config->usb_logging_enable = 1u;
     config->lcd_menu_mask = TEMPLOGPRO_LCD_MENU_ALL;
     config->temperature_unit = TEMPLOGPRO_UNIT_CELSIUS;
+    config->tz_std_offset_min = 0;
+    config->tz_dst_delta_min = 0;
+    memset(&config->tz_dst_start, 0, sizeof(config->tz_dst_start));
+    memset(&config->tz_dst_end, 0, sizeof(config->tz_dst_end));
+    memset(config->tz_name, 0, sizeof(config->tz_name));
 }
 
 uint32_t templogpro_config_text_size(void)
@@ -285,9 +301,37 @@ static void encode_config(const StoredConfig *config, uint8_t *raw)
     put_u32(raw, 36u, config->value.led_enable);
     put_u16(raw, 40u, (uint16_t)config->value.usb_logging_enable);
     put_u16(raw, 42u, (uint16_t)config->value.temperature_unit);
-    put_u16(raw, 44u, 0u);
+    put_u16(raw, 44u, (uint16_t)(int16_t)config->value.tz_std_offset_min);
+    put_u16(raw, 46u, (uint16_t)(int16_t)config->value.tz_dst_delta_min);
+    encode_rule(&raw[48], &config->value.tz_dst_start);
+    encode_rule(&raw[54], &config->value.tz_dst_end);
+    memcpy(&raw[CONFIG_TZ_NAME_OFFSET], config->value.tz_name, TEMPLOGPRO_TZ_NAME_SIZE);
+    raw[CONFIG_TZ_NAME_OFFSET + TEMPLOGPRO_TZ_NAME_SIZE - 1u] = 0u;
     crc = crc16_ccitt_local(raw, CONFIG_CRC_OFFSET);
     put_u16(raw, CONFIG_CRC_OFFSET, crc);
+}
+
+static void encode_rule(uint8_t *raw, const TempLogProDstRule *rule)
+{
+    raw[0] = rule->month;
+    raw[1] = rule->week;
+    raw[2] = rule->weekday;
+    raw[3] = 0u;
+    put_u16(raw, 4u, rule->minute);
+}
+
+static void decode_rule(const uint8_t *raw, TempLogProDstRule *rule)
+{
+    rule->month = raw[0];
+    rule->week = raw[1];
+    rule->weekday = raw[2];
+    rule->minute = get_u16(raw, 4u);
+}
+
+static uint32_t tz_rule_sane(const TempLogProDstRule *rule)
+{
+    return ((rule->month >= 1u) && (rule->month <= 12u) && (rule->week >= 1u) && (rule->week <= 5u) &&
+            (rule->weekday <= 6u) && (rule->minute < 1440u)) ? 1u : 0u;
 }
 
 static uint32_t decode_config(const uint8_t *raw, StoredConfig *config)
@@ -309,6 +353,9 @@ static uint32_t decode_config(const uint8_t *raw, StoredConfig *config)
                (version == CONFIG_MENU_VERSION)) {
         stored_crc = get_u16(raw, CONFIG_V4_CRC_OFFSET);
         calculated_crc = crc16_ccitt_local(raw, CONFIG_V4_CRC_OFFSET);
+    } else if (version == CONFIG_UNIT_VERSION) {
+        stored_crc = get_u16(raw, CONFIG_V5_CRC_OFFSET);
+        calculated_crc = crc16_ccitt_local(raw, CONFIG_V5_CRC_OFFSET);
     } else if (version == CONFIG_VERSION) {
         stored_crc = get_u16(raw, CONFIG_CRC_OFFSET);
         calculated_crc = crc16_ccitt_local(raw, CONFIG_CRC_OFFSET);
@@ -335,7 +382,20 @@ static uint32_t decode_config(const uint8_t *raw, StoredConfig *config)
     /* Preserve USB logging when loading configurations from earlier firmware. */
     config->value.usb_logging_enable = (version >= CONFIG_USB_VERSION) ? get_u16(raw, 40u) : 1u;
     config->value.lcd_menu_mask = (version >= CONFIG_MENU_VERSION) ? get_u16(raw, 6u) : TEMPLOGPRO_LCD_MENU_ALL;
-    config->value.temperature_unit = (version >= CONFIG_VERSION) ? get_u16(raw, 42u) : TEMPLOGPRO_UNIT_CELSIUS;
+    config->value.temperature_unit = (version >= CONFIG_UNIT_VERSION) ? get_u16(raw, 42u) : TEMPLOGPRO_UNIT_CELSIUS;
+    /* v1-v5 had no time zone: UTC without daylight saving, as the clock was set. */
+    memset(&config->value.tz_dst_start, 0, sizeof(config->value.tz_dst_start));
+    memset(&config->value.tz_dst_end, 0, sizeof(config->value.tz_dst_end));
+    memset(config->value.tz_name, 0, sizeof(config->value.tz_name));
+    config->value.tz_std_offset_min = 0;
+    config->value.tz_dst_delta_min = 0;
+    if (version >= CONFIG_VERSION) {
+        config->value.tz_std_offset_min = (int16_t)get_u16(raw, 44u);
+        config->value.tz_dst_delta_min = (int16_t)get_u16(raw, 46u);
+        decode_rule(&raw[48], &config->value.tz_dst_start);
+        decode_rule(&raw[54], &config->value.tz_dst_end);
+        memcpy(config->value.tz_name, &raw[CONFIG_TZ_NAME_OFFSET], TEMPLOGPRO_TZ_NAME_SIZE - 1u);
+    }
     /* Older firmware allowed up to 86400 s; keep such a config usable. */
     if (config->value.interval_seconds > TEMPLOGPRO_CONFIG_MAX_INTERVAL_S) {
         config->value.interval_seconds = TEMPLOGPRO_CONFIG_MAX_INTERVAL_S;
@@ -378,6 +438,16 @@ static uint32_t config_is_sane(const TempLogProConfig *config)
         return 0u;
     }
     if (config->lcd_mode > 11u) {
+        return 0u;
+    }
+    /* UTC-12:00 .. UTC+14:00 in 15 min steps; summer shift up to 2 h. */
+    if ((config->tz_std_offset_min < -720) || (config->tz_std_offset_min > 840) ||
+        ((config->tz_std_offset_min % 15) != 0) ||
+        (config->tz_dst_delta_min < 0) || (config->tz_dst_delta_min > 120)) {
+        return 0u;
+    }
+    if ((config->tz_dst_delta_min != 0) &&
+        ((tz_rule_sane(&config->tz_dst_start) == 0u) || (tz_rule_sane(&config->tz_dst_end) == 0u))) {
         return 0u;
     }
     /* Home must remain reachable, even when every optional card is hidden. */
@@ -475,10 +545,21 @@ static void build_config_text(char *buf, uint32_t len)
     pos = append_str(buf, pos, len, "\r\ntemperature_unit=");
     pos = append_str(buf, pos, len,
                      (g_config.temperature_unit == TEMPLOGPRO_UNIT_FAHRENHEIT) ? "F" : "C");
+    pos = append_str(buf, pos, len, "\r\ntz_name=");
+    pos = append_str(buf, pos, len, g_config.tz_name);
+    pos = append_str(buf, pos, len, "\r\ntz_offset_min=");
+    pos = append_i32(buf, pos, len, g_config.tz_std_offset_min);
+    pos = append_str(buf, pos, len, "\r\ntz_dst_min=");
+    pos = append_i32(buf, pos, len, g_config.tz_dst_delta_min);
+    pos = append_str(buf, pos, len, "\r\ntz_dst_start=");
+    pos = append_rule(buf, pos, len, &g_config.tz_dst_start);
+    pos = append_str(buf, pos, len, "\r\ntz_dst_end=");
+    pos = append_rule(buf, pos, len, &g_config.tz_dst_end);
     pos = append_str(buf, pos, len, "\r\nconfig_generation=");
     pos = append_u32(buf, pos, len, g_config_generation);
     pos = append_str(buf, pos, len, "\r\n# LCD: 0 temp, 1 state, 2 min, 3 max, 4 avg, 5 low, 6 high\r\n");
     pos = append_str(buf, pos, len, "# LCD: 7 runtime, 8 records, 9 interval, 10 battery, 11 clear\r\n");
+    pos = append_str(buf, pos, len, "# tz_dst_*: month.week(5=last).weekday(0=Sun).minute; clock is UTC\r\n");
 
     (void)pos;
 }
@@ -601,6 +682,33 @@ static uint32_t parse_config_text(const uint8_t *source, uint32_t length, TempLo
                 return 0u;
             }
             config->led_enable = value_u32;
+            parsed = 1u;
+        } else if (key_equals(&source[key_start], key_end - key_start, "tz_name") != 0u) {
+            if (parse_name_value(&source[value_start], value_end - value_start, config->tz_name) == 0u) {
+                return 0u;
+            }
+            parsed = 1u;
+        } else if (key_equals(&source[key_start], key_end - key_start, "tz_offset_min") != 0u) {
+            if (parse_i32_value(&source[value_start], value_end - value_start, &value_temp) == 0u) {
+                return 0u;
+            }
+            config->tz_std_offset_min = value_temp;
+            parsed = 1u;
+        } else if (key_equals(&source[key_start], key_end - key_start, "tz_dst_min") != 0u) {
+            if (parse_i32_value(&source[value_start], value_end - value_start, &value_temp) == 0u) {
+                return 0u;
+            }
+            config->tz_dst_delta_min = value_temp;
+            parsed = 1u;
+        } else if (key_equals(&source[key_start], key_end - key_start, "tz_dst_start") != 0u) {
+            if (parse_rule_value(&source[value_start], value_end - value_start, &config->tz_dst_start) == 0u) {
+                return 0u;
+            }
+            parsed = 1u;
+        } else if (key_equals(&source[key_start], key_end - key_start, "tz_dst_end") != 0u) {
+            if (parse_rule_value(&source[value_start], value_end - value_start, &config->tz_dst_end) == 0u) {
+                return 0u;
+            }
             parsed = 1u;
         } else if (key_equals(&source[key_start], key_end - key_start, "temperature_unit") != 0u) {
             if ((token_equals(&source[value_start], value_end - value_start, "c") != 0u) ||
@@ -768,4 +876,94 @@ static uint32_t token_equals(const uint8_t *text, uint32_t len, const char *toke
 static uint32_t is_space(uint8_t ch)
 {
     return ((ch == ' ') || (ch == '\t')) ? 1u : 0u;
+}
+
+static uint32_t append_i32(char *buf, uint32_t pos, uint32_t max, int32_t value)
+{
+    if (value < 0) {
+        pos = append_str(buf, pos, max, "-");
+        return append_u32(buf, pos, max, (uint32_t)(-value));
+    }
+    return append_u32(buf, pos, max, (uint32_t)value);
+}
+
+static uint32_t append_rule(char *buf, uint32_t pos, uint32_t max, const TempLogProDstRule *rule)
+{
+    pos = append_u32(buf, pos, max, rule->month);
+    pos = append_str(buf, pos, max, ".");
+    pos = append_u32(buf, pos, max, rule->week);
+    pos = append_str(buf, pos, max, ".");
+    pos = append_u32(buf, pos, max, rule->weekday);
+    pos = append_str(buf, pos, max, ".");
+    return append_u32(buf, pos, max, rule->minute);
+}
+
+static uint32_t parse_i32_value(const uint8_t *text, uint32_t len, int32_t *value)
+{
+    uint32_t magnitude;
+    uint32_t negative = 0u;
+
+    if ((len > 1u) && ((text[0] == '-') || (text[0] == '+'))) {
+        negative = (text[0] == '-') ? 1u : 0u;
+        text++;
+        len--;
+    }
+    if ((parse_u32_value(text, len, &magnitude) == 0u) || (magnitude > 100000u)) {
+        return 0u;
+    }
+    *value = (negative != 0u) ? -(int32_t)magnitude : (int32_t)magnitude;
+    return 1u;
+}
+
+/* "month.week.weekday.minute", e.g. 3.5.0.120 = last Sunday of March, 02:00. */
+static uint32_t parse_rule_value(const uint8_t *text, uint32_t len, TempLogProDstRule *rule)
+{
+    uint32_t parts[4] = {0u, 0u, 0u, 0u};
+    uint32_t part = 0u;
+    uint32_t digits = 0u;
+    uint32_t i;
+
+    for (i = 0u; i < len; i++) {
+        if (text[i] == '.') {
+            if ((digits == 0u) || (part >= 3u)) {
+                return 0u;
+            }
+            part++;
+            digits = 0u;
+        } else if ((text[i] >= '0') && (text[i] <= '9') && (digits < 5u)) {
+            parts[part] = (parts[part] * 10u) + (uint32_t)(text[i] - '0');
+            digits++;
+        } else {
+            return 0u;
+        }
+    }
+    if ((part != 3u) || (digits == 0u) || (parts[0] > 12u) || (parts[1] > 5u) ||
+        (parts[2] > 6u) || (parts[3] >= 1440u)) {
+        return 0u;
+    }
+    rule->month = (uint8_t)parts[0];
+    rule->week = (uint8_t)parts[1];
+    rule->weekday = (uint8_t)parts[2];
+    rule->minute = (uint16_t)parts[3];
+    return 1u;
+}
+
+/* IANA zone names: letters, digits and / _ - + only; empty clears the name. */
+static uint32_t parse_name_value(const uint8_t *text, uint32_t len, char *name)
+{
+    uint32_t i;
+
+    if (len >= TEMPLOGPRO_TZ_NAME_SIZE) {
+        return 0u;
+    }
+    for (i = 0u; i < len; i++) {
+        uint8_t ch = text[i];
+        if (!(((ch >= 'a') && (ch <= 'z')) || ((ch >= 'A') && (ch <= 'Z')) || ((ch >= '0') && (ch <= '9')) ||
+              (ch == '/') || (ch == '_') || (ch == '-') || (ch == '+'))) {
+            return 0u;
+        }
+    }
+    memset(name, 0, TEMPLOGPRO_TZ_NAME_SIZE);
+    memcpy(name, text, len);
+    return 1u;
 }

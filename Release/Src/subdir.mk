@@ -23,6 +23,7 @@ C_SRCS += \
 ../Src/templogpro_rtc.c \
 ../Src/templogpro_sensor.c \
 ../Src/templogpro_storage_layout.c \
+../Src/templogpro_tz.c \
 ../Src/templogpro_usb_files.c 
 
 OBJS += \
@@ -44,6 +45,7 @@ OBJS += \
 ./Src/templogpro_rtc.o \
 ./Src/templogpro_sensor.o \
 ./Src/templogpro_storage_layout.o \
+./Src/templogpro_tz.o \
 ./Src/templogpro_usb_files.o 
 
 C_DEPS += \
@@ -65,6 +67,7 @@ C_DEPS += \
 ./Src/templogpro_rtc.d \
 ./Src/templogpro_sensor.d \
 ./Src/templogpro_storage_layout.d \
+./Src/templogpro_tz.d \
 ./Src/templogpro_usb_files.d 
 
 
@@ -75,7 +78,7 @@ Src/%.o Src/%.su Src/%.cyclo: ../Src/%.c Src/subdir.mk
 clean: clean-Src
 
 clean-Src:
-	-$(RM) ./Src/board.cyclo ./Src/board.d ./Src/board.o ./Src/board.su ./Src/drv_adc.cyclo ./Src/drv_adc.d ./Src/drv_adc.o ./Src/drv_adc.su ./Src/drv_lcd.cyclo ./Src/drv_lcd.d ./Src/drv_lcd.o ./Src/drv_lcd.su ./Src/drv_sensor_i2c.cyclo ./Src/drv_sensor_i2c.d ./Src/drv_sensor_i2c.o ./Src/drv_sensor_i2c.su ./Src/drv_w25x40.cyclo ./Src/drv_w25x40.d ./Src/drv_w25x40.o ./Src/drv_w25x40.su ./Src/main.cyclo ./Src/main.d ./Src/main.o ./Src/main.su ./Src/syscalls.cyclo ./Src/syscalls.d ./Src/syscalls.o ./Src/syscalls.su ./Src/sysmem.cyclo ./Src/sysmem.d ./Src/sysmem.o ./Src/sysmem.su ./Src/templogpro_app.cyclo ./Src/templogpro_app.d ./Src/templogpro_app.o ./Src/templogpro_app.su ./Src/templogpro_buttons.cyclo ./Src/templogpro_buttons.d ./Src/templogpro_buttons.o ./Src/templogpro_buttons.su ./Src/templogpro_config.cyclo ./Src/templogpro_config.d ./Src/templogpro_config.o ./Src/templogpro_config.su ./Src/templogpro_diag.cyclo ./Src/templogpro_diag.d ./Src/templogpro_diag.o ./Src/templogpro_diag.su ./Src/templogpro_logger.cyclo ./Src/templogpro_logger.d ./Src/templogpro_logger.o ./Src/templogpro_logger.su ./Src/templogpro_pdf.cyclo ./Src/templogpro_pdf.d ./Src/templogpro_pdf.o ./Src/templogpro_pdf.su ./Src/templogpro_power.cyclo ./Src/templogpro_power.d ./Src/templogpro_power.o ./Src/templogpro_power.su ./Src/templogpro_rtc.cyclo ./Src/templogpro_rtc.d ./Src/templogpro_rtc.o ./Src/templogpro_rtc.su ./Src/templogpro_sensor.cyclo ./Src/templogpro_sensor.d ./Src/templogpro_sensor.o ./Src/templogpro_sensor.su ./Src/templogpro_storage_layout.cyclo ./Src/templogpro_storage_layout.d ./Src/templogpro_storage_layout.o ./Src/templogpro_storage_layout.su ./Src/templogpro_usb_files.cyclo ./Src/templogpro_usb_files.d ./Src/templogpro_usb_files.o ./Src/templogpro_usb_files.su
+	-$(RM) ./Src/board.cyclo ./Src/board.d ./Src/board.o ./Src/board.su ./Src/drv_adc.cyclo ./Src/drv_adc.d ./Src/drv_adc.o ./Src/drv_adc.su ./Src/drv_lcd.cyclo ./Src/drv_lcd.d ./Src/drv_lcd.o ./Src/drv_lcd.su ./Src/drv_sensor_i2c.cyclo ./Src/drv_sensor_i2c.d ./Src/drv_sensor_i2c.o ./Src/drv_sensor_i2c.su ./Src/drv_w25x40.cyclo ./Src/drv_w25x40.d ./Src/drv_w25x40.o ./Src/drv_w25x40.su ./Src/main.cyclo ./Src/main.d ./Src/main.o ./Src/main.su ./Src/syscalls.cyclo ./Src/syscalls.d ./Src/syscalls.o ./Src/syscalls.su ./Src/sysmem.cyclo ./Src/sysmem.d ./Src/sysmem.o ./Src/sysmem.su ./Src/templogpro_app.cyclo ./Src/templogpro_app.d ./Src/templogpro_app.o ./Src/templogpro_app.su ./Src/templogpro_buttons.cyclo ./Src/templogpro_buttons.d ./Src/templogpro_buttons.o ./Src/templogpro_buttons.su ./Src/templogpro_config.cyclo ./Src/templogpro_config.d ./Src/templogpro_config.o ./Src/templogpro_config.su ./Src/templogpro_diag.cyclo ./Src/templogpro_diag.d ./Src/templogpro_diag.o ./Src/templogpro_diag.su ./Src/templogpro_logger.cyclo ./Src/templogpro_logger.d ./Src/templogpro_logger.o ./Src/templogpro_logger.su ./Src/templogpro_pdf.cyclo ./Src/templogpro_pdf.d ./Src/templogpro_pdf.o ./Src/templogpro_pdf.su ./Src/templogpro_power.cyclo ./Src/templogpro_power.d ./Src/templogpro_power.o ./Src/templogpro_power.su ./Src/templogpro_rtc.cyclo ./Src/templogpro_rtc.d ./Src/templogpro_rtc.o ./Src/templogpro_rtc.su ./Src/templogpro_sensor.cyclo ./Src/templogpro_sensor.d ./Src/templogpro_sensor.o ./Src/templogpro_sensor.su ./Src/templogpro_storage_layout.cyclo ./Src/templogpro_storage_layout.d ./Src/templogpro_storage_layout.o ./Src/templogpro_storage_layout.su ./Src/templogpro_tz.cyclo ./Src/templogpro_tz.d ./Src/templogpro_tz.o ./Src/templogpro_tz.su ./Src/templogpro_usb_files.cyclo ./Src/templogpro_usb_files.d ./Src/templogpro_usb_files.o ./Src/templogpro_usb_files.su
 
 .PHONY: clean-Src
 
