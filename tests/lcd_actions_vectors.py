@@ -23,6 +23,7 @@ class ActionDevice(Display):
         self.set('g_next_measurement_timestamp', self.ts + 1000)
         self.addresses[symbols['templogpro_buttons_current_mask']] = lambda a,b,c: self.held
         self.addresses[symbols['templogpro_logger_format']] = self.format
+        self.addresses[symbols['templogpro_power_read_vdd_mv']] = self.read_vdd
 
     def format(self, a, b, c):
         self.formats += 1
@@ -59,6 +60,25 @@ for action, state, expected in ((1,0,(1,0,0)), (2,1,(0,1,0)), (3,1,(0,1,1))):
     d.advance(400)
     d.call('templogpro_app_process')
     check((d.starts,d.stops,d.formats) == expected)
+
+# Weak battery (no USB): CLR and START are refused before any flash work,
+# the state stays as it was and nothing is marked in the backup register.
+for action, state in ((1,0), (3,1), (3,2)):
+    d = ActionDevice(state, action)
+    d.vdd_mv = 2550
+    d.call('app_start_action', action, d.tick)
+    for _ in range(6):
+        d.advance(400)
+        d.call('templogpro_app_process')
+    check((d.starts, d.stops, d.formats) == (0,0,0) and d.flash_ops == [])
+    check(d.get('g_app_state') == state and d.get('g_lcd_message_icons') != 0)
+for action, state, op in ((1,0,2), (3,2,1)):
+    d = ActionDevice(state, action)
+    d.call('app_start_action', action, d.tick)
+    for _ in range(6):
+        d.advance(400)
+        d.call('templogpro_app_process')
+    check(d.flash_ops == [op, 0])
 
 d = ActionDevice(1,3)
 d.call('app_start_action',3,d.tick)

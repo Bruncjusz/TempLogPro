@@ -384,6 +384,36 @@ i sprawdzony testem `lcd_segment_map_vectors.py` na obrazie.
   `8a6bd46110432ab531fbd272278bc923c64e31c3db13fdc7782f7cb5ce8aeefa`
   (także `firmware/TempLogPro.bin|hex`). GitHub: tag `v1.0.0` + Release.
 
+- 2026-10-13 (po 1.0.0, wersja jeszcze 1.0.0, niewydane na GitHubie):
+  nazwa w Windows z małymi literami — etykieta FAT `TempLogPro` (Windows ją
+  tak pokazuje), SCSI inquiry vendor pusty + product `TempLogPro` („TempLogPro
+  USB Device”); `GET TIME` (CDC, UTC + lokalny + offset); zegar 12 h na LCD
+  (`LCD_VIEW_CLOCK` = 12, karta po temperaturze, `templogpro_hw_lcd_show_clock12`,
+  dwukropek miga; LEDS/ICON_SCAN przenumerowane na 13/14), maska menu 13 bitów,
+  konfiguracja v7 (układ v6; starsze dostają bit 12); panel: checkbox „Ustaw
+  zegar przy zapisie” + źródło (komputer / pole), „Wstaw czas i strefę
+  z komputera” tylko wypełnia pola, jeden „Zapisz”, zegar urządzenia na żywo
+  z różnicą względem PC. TODO.txt użytkownika omówione; diagnostyki poboru
+  prądu pominięte (decyzja użytkownika). Wgrane: bin
+  `697d2a50b745774fbabb54cbea41d7abf8203f9e0a75ab7a3a245e1a1f791f57`.
+
+- 2026-10-13 (dalej 1.0.0): słońce na zegarze 12 h po południu; ochrona
+  CLR/START na baterii (`app_flash_power_ok`, < 2700 mV → odmowa, migają
+  BATTERY + X przez 3 s, `g_lcd_message_icons`); znacznik operacji w
+  `RTC_BKP2R` (`templogpro_diag_flash_op_begin/end`), przyczyna restartu
+  `templogpro_diag_reset_cause()` w `POWER.TXT` (`LAST_RESET=`), w JSON
+  (`"reset"`) i w panelu (Informacje → Ostatni restart); po przerwanej
+  operacji bateria miga 5 s po starcie. Testy: stuby VDD/flash-op w
+  harnessie, nowe przypadki w `lcd_actions_vectors.py`. Wgrane: bin
+  `456b3e939747242231b507722096baa9f80e1fedfe5a03c5987481ba65014094`;
+  na urządzeniu `LAST_RESET=SOFTWARE` po wgraniu (poprawnie).
+
+- 2026-10-13: **wersja 1.1.0** (powyższe zmiany z 13.10), nowe zrzuty panelu
+  w `docs/assets` (raport ciemny/jasny, Dane, Informacje, Ustawienia) opisane
+  w instrukcji. Wgrane: bin
+  `99e35b9233aae0ff6bc3db730d564a3d9a8769c915e3b6bf2108e8fff13c71e9`
+  (także `firmware/TempLogPro.bin|hex`). GitHub: tag `v1.1.0` + Release.
+
 ## Znane błędy, nienaprawione
 
 - Brak.

@@ -422,7 +422,9 @@ static void html_config_block_build(char *buf, uint32_t len)
     pos = append_u32(buf, pos, len, config.led_enable);
     pos = append_str(buf, pos, len, ",\"unit\":");
     pos = append_u32(buf, pos, len, config.temperature_unit);
-    pos = append_str(buf, pos, len, ",\"tzName\":\"");
+    pos = append_str(buf, pos, len, ",\"reset\":\"");
+    pos = append_str(buf, pos, len, templogpro_diag_reset_cause());
+    pos = append_str(buf, pos, len, "\",\"tzName\":\"");
     pos = append_str(buf, pos, len, config.tz_name);
     pos = append_str(buf, pos, len, "\",\"tzStd\":");
     pos = append_i32_json(buf, pos, len, config.tz_std_offset_min);
@@ -804,6 +806,8 @@ static void power_build(char *buf, uint32_t len)
     pos = append_str(buf, pos, len, "# Software telemetry, not a direct current measurement.\r\n\r\n");
     pos = append_str(buf, pos, len, "SOURCE=");
     pos = append_str(buf, pos, len, stats.usb_present ? "USB" : "BATTERY");
+    pos = append_str(buf, pos, len, "\r\nLAST_RESET=");
+    pos = append_str(buf, pos, len, templogpro_diag_reset_cause());
     pos = append_str(buf, pos, len, "\r\nVDD_MV=");
     if (vdd_mv != 0u) {
         pos = append_u32(buf, pos, len, vdd_mv);

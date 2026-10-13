@@ -80,8 +80,8 @@ for (const width of [1440, 480]) {
   check(r.unit === '1' && r.reportUnit === 'F', 'device unit F drives the field and the report');
   check(r.payload.includes('temperature_unit=F\n') && r.payload.includes('lcd_menu_mask=3839\n'), 'payload');
   check(r.intervalMax === '600', 'interval limit');
-  check(JSON.stringify(r.menuOrder) === '[0,1,4,3,6,2,5,7,8,9,10,11]', 'menu checkboxes in device order');
-  check(JSON.stringify(r.startOrder) === '[0,1,4,3,6,2,5,7,8,9,10,11]', 'start screen options in device order');
+  check(JSON.stringify(r.menuOrder) === '[0,12,1,4,3,6,2,5,7,8,9,10,11]', 'menu checkboxes in device order (clock after temperature)');
+  check(JSON.stringify(r.startOrder) === '[0,12,1,4,3,6,2,5,7,8,9,10,11]', 'start screen options in device order');
   check(r.menuChecked === 11 && r.homeLocked, 'menu mask applied, home screen locked');
   check(r.rows === 4 && r.badRecords === 1, 'skipped E001 slot hidden from the table and counted');
   check(JSON.stringify(r.episodes) === '["Hopen33"]' && r.alarmRows === 1, 'one ongoing excursion above the limit, peak 33.0');
@@ -117,7 +117,7 @@ const tzProbe = `<script>setTimeout(()=>{let r={};try{
   r.badge=$('tzBadge').textContent;
   r.roundTrip=temps.every(q=>{setInputMs('fromDt',q.ms);return readInputMs($('fromDt'))===q.ms});r.typed=inputToMs('2026-10-25T04:00:00')===Date.UTC(2026,9,25,3);
   r.zoneRule=JSON.stringify(zoneRule('Europe/Warsaw'));
-  $('cfgTz').value='Europe/Warsaw';$('cfgDstMode').value='auto';$('cfgTz').onchange();r.payload=serialPayload('2026-07-01 10:00:00');
+  $('cfgTz').value='Europe/Warsaw';$('cfgDstMode').value='auto';$('cfgTz').onchange();r.payload=serialPayload('2026-07-01 10:00:00');r.noClock=clockToSend()==='';$('syncClockBtn').click();r.pcClock=Math.abs(Date.parse(clockToSend().replace(' ','T')+'Z')-Date.now())<5000;$('clockSource').value='manual';$('cfgClock').value='2026-07-01T12:00:00';r.manualClock=clockToSend();devClock={utc:Date.now()-5000,off:120,at:performance.now()};renderDevClock();r.devClock=$('devClock').textContent;
   r.clockUtc=utcStamp(clockToUtc('2026-07-01T12:00:00',uiZone()));
   r.ny=JSON.stringify(zoneRule('America/New_York'));r.syd=JSON.stringify(zoneRule('Australia/Sydney'));
   r.legend=$('chartBigLegend').textContent;r.info=$('deviceInfo').textContent;
@@ -138,6 +138,8 @@ fs.writeFileSync(page, literal('HTML_PREFIX') + tzCsv + '</script><script id="co
   check(z.payload.includes('SET TIME 2026-07-01 10:00:00\n') && z.payload.includes('tz_name=Europe/Warsaw\n') &&
         z.payload.includes('tz_offset_min=60\n') && z.payload.includes('tz_dst_start=3.5.0.120\n') && z.payload.includes('tz_dst_end=10.5.0.180\n'), 'payload carries UTC time and the zone');
   check(z.clockUtc === '2026-07-01 10:00:00', 'manual local clock converted to UTC: ' + z.clockUtc);
+  check(z.noClock && z.pcClock && z.manualClock === '2026-07-01 10:00:00', 'clock sent only when ticked, from the computer or the manual field: ' + [z.noClock, z.pcClock, z.manualClock].join(' '));
+  check(z.devClock.includes('(UTC+02:00)') && z.devClock.includes('5 s'), 'live device clock with difference from the computer: ' + z.devClock);
   check(z.legend.includes('ZMIANA CZASU') && z.markers === 1, 'chart marks the time change: ' + z.legend + ' markers=' + z.markers + ' texts=' + z.texts);
   check(z.info.includes('Europe/Warsaw') && z.info.includes('ostatnia niedziela marca 02:00'), 'device info describes the zone and rule');
 }

@@ -6,7 +6,8 @@
 #include <string.h>
 
 #define CONFIG_MAGIC                0x54434647u
-#define CONFIG_VERSION              6u
+#define CONFIG_VERSION              7u
+#define CONFIG_TZ_VERSION           6u
 #define CONFIG_UNIT_VERSION         5u
 #define CONFIG_MENU_VERSION         4u
 #define CONFIG_USB_VERSION          3u
@@ -356,7 +357,7 @@ static uint32_t decode_config(const uint8_t *raw, StoredConfig *config)
     } else if (version == CONFIG_UNIT_VERSION) {
         stored_crc = get_u16(raw, CONFIG_V5_CRC_OFFSET);
         calculated_crc = crc16_ccitt_local(raw, CONFIG_V5_CRC_OFFSET);
-    } else if (version == CONFIG_VERSION) {
+    } else if ((version == CONFIG_TZ_VERSION) || (version == CONFIG_VERSION)) {
         stored_crc = get_u16(raw, CONFIG_CRC_OFFSET);
         calculated_crc = crc16_ccitt_local(raw, CONFIG_CRC_OFFSET);
     } else {
@@ -389,7 +390,11 @@ static uint32_t decode_config(const uint8_t *raw, StoredConfig *config)
     memset(config->value.tz_name, 0, sizeof(config->value.tz_name));
     config->value.tz_std_offset_min = 0;
     config->value.tz_dst_delta_min = 0;
-    if (version >= CONFIG_VERSION) {
+    /* v7 added the clock card (bit 12): show it on configurations saved earlier. */
+    if (version < CONFIG_VERSION) {
+        config->value.lcd_menu_mask |= (1u << 12);
+    }
+    if (version >= CONFIG_TZ_VERSION) {
         config->value.tz_std_offset_min = (int16_t)get_u16(raw, 44u);
         config->value.tz_dst_delta_min = (int16_t)get_u16(raw, 46u);
         decode_rule(&raw[48], &config->value.tz_dst_start);
@@ -437,7 +442,7 @@ static uint32_t config_is_sane(const TempLogProConfig *config)
         config->temperature_unit > TEMPLOGPRO_UNIT_FAHRENHEIT) {
         return 0u;
     }
-    if (config->lcd_mode > 11u) {
+    if (config->lcd_mode > 12u) {
         return 0u;
     }
     /* UTC-12:00 .. UTC+14:00 in 15 min steps; summer shift up to 2 h. */
@@ -558,7 +563,7 @@ static void build_config_text(char *buf, uint32_t len)
     pos = append_str(buf, pos, len, "\r\nconfig_generation=");
     pos = append_u32(buf, pos, len, g_config_generation);
     pos = append_str(buf, pos, len, "\r\n# LCD: 0 temp, 1 state, 2 min, 3 max, 4 avg, 5 low, 6 high\r\n");
-    pos = append_str(buf, pos, len, "# LCD: 7 runtime, 8 records, 9 interval, 10 battery, 11 clear\r\n");
+    pos = append_str(buf, pos, len, "# LCD: 7 runtime, 8 records, 9 interval, 10 battery, 11 clear, 12 clock\r\n");
     pos = append_str(buf, pos, len, "# tz_dst_*: month.week(5=last).weekday(0=Sun).minute; clock is UTC\r\n");
 
     (void)pos;

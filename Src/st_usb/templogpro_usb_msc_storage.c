@@ -74,10 +74,10 @@ static int8_t inquiry_data[] = {
     0x00,
     0x00,
     0x00,
-    /* Vendor (8) + product (16): Windows shows "TempLog Pro USB Device". */
-    'T', 'e', 'm', 'p', 'L', 'o', 'g', ' ',
-    'P', 'r', 'o', ' ', ' ', ' ', ' ', ' ',
+    /* Vendor (8, blank) + product (16): Windows shows "TempLogPro USB Device". */
     ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+    'T', 'e', 'm', 'p', 'L', 'o', 'g', 'P',
+    'r', 'o', ' ', ' ', ' ', ' ', ' ', ' ',
     '0', '0', '1', '0',
 };
 
@@ -273,7 +273,7 @@ static void build_boot_sector(uint8_t *buf)
 {
     static const uint8_t jump[3] = {0xEB, 0x3C, 0x90};
     static const uint8_t oem[8] = {'T', 'E', 'M', 'P', 'T', 'A', 'L', 'E'};
-    static const uint8_t label[11] = {'T', 'E', 'M', 'P', 'L', 'O', 'G', 'P', 'R', 'O', ' '};
+    static const uint8_t label[11] = {'T', 'e', 'm', 'p', 'L', 'o', 'g', 'P', 'r', 'o', ' '};
     static const uint8_t fs_type[8] = {'F', 'A', 'T', '1', '6', ' ', ' ', ' '};
 
     memcpy(&buf[0], jump, sizeof(jump));
@@ -323,7 +323,7 @@ static void build_root_sector(uint32_t root_sector, uint8_t *buf)
         return;
     }
 
-    memcpy(&buf[0], "TEMPLOGPRO ", 11U);
+    memcpy(&buf[0], "TempLogPro ", 11U);
     buf[11] = 0x08U;
     put_u16(buf, 22U, 0x5A21U);
     put_u16(buf, 24U, 0x5B39U);

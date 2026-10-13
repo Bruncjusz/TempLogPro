@@ -8,7 +8,7 @@
 #define TEMPLOGPRO_CONFIG_STATUS_ERROR       3u
 
 #define TEMPLOGPRO_CONFIG_TEXT_SIZE          512u
-#define TEMPLOGPRO_LCD_MENU_ALL              0x0FFFu
+#define TEMPLOGPRO_LCD_MENU_ALL              0x1FFFu  /* cards 0-12 (12 = clock) */
 /* The LCD shows the interval as plain seconds on three digits. */
 #define TEMPLOGPRO_CONFIG_MAX_INTERVAL_S     600u
 

@@ -46,6 +46,7 @@ class Device:
         self.fault = ''
         self.flash = bytearray(b'\xff' * 4096)
         self.flash_writes = 0
+        self.vdd_mv, self.flash_ops = 3000, []
         self.handlers = {
             'HAL_GetTick': lambda a, b, c: self.tick,
             'templogpro_hw_sensor_init': lambda a, b, c: 1,
@@ -62,6 +63,9 @@ class Device:
             'templogpro_logger_start': self.start,
             'templogpro_logger_resume': self.start,
             'templogpro_logger_stats_ready': lambda a, b, c: 1,
+            'templogpro_power_read_vdd_mv': self.read_vdd,
+            'templogpro_diag_flash_op_begin': lambda a, b, c: self.flash_ops.append(a),
+            'templogpro_diag_flash_op_end': lambda a, b, c: self.flash_ops.append(0),
         }
         noop = ['templogpro_rtc_process', 'templogpro_rtc_take_event', 'templogpro_logger_process',
                 'templogpro_logger_get_stats', 'templogpro_logger_get_info', 'templogpro_logger_set_interval',
@@ -71,6 +75,10 @@ class Device:
             self.handlers[name] = lambda a, b, c: 0
         self.addresses = {symbols[k]: v for k, v in self.handlers.items() if k in symbols}
         self.uc.hook_add(UC_HOOK_CODE, self.hook)
+
+    def read_vdd(self, a, b, c):
+        self.uc.mem_write(a, struct.pack('<H', self.vdd_mv))
+        return 1
 
     def hook(self, uc, address, size, user):
         if address in self.addresses:
@@ -166,7 +174,8 @@ for version in (1,2,3,4):
         cfg=struct.unpack('<IiiIIIIII',d.uc.mem_read(OUT,36))
         check(cfg[0:4]==(10,24*256,32*256,1))
         check(cfg[-2]==(mode if version>=3 else 1))
-        check(cfg[-1]==(5 if version==4 else 4095))
+        # Older configurations gain the clock card (bit 12) added in config v7.
+        check(cfg[-1]==((5 | 4096) if version==4 else 8191))
         check(d.flash_writes==0)
         check(d.call('templogpro_config_set',OUT)==1)
         check(d.call('templogpro_config_init')==1)

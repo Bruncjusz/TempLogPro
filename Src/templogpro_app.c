@@ -1,4 +1,5 @@
 #include "templogpro_app.h"
+#include "templogpro_tz.h"
 #include "templogpro_buttons.h"
 #include "templogpro_config.h"
 #include "templogpro_diag.h"
@@ -30,8 +31,9 @@ typedef enum
     LCD_VIEW_INTERVAL = 9,
     LCD_VIEW_BATTERY = 10,
     LCD_VIEW_RESET = 11,
-    LCD_VIEW_LEDS = 12,
-    LCD_VIEW_ICON_SCAN = 13
+    LCD_VIEW_CLOCK = 12,
+    LCD_VIEW_LEDS = 13,
+    LCD_VIEW_ICON_SCAN = 14
 } LcdView;
 
 typedef enum
@@ -64,6 +66,7 @@ static uint32_t g_app_config_generation;
 static LcdView g_lcd_view = LCD_VIEW_TEMPERATURE;
 static uint32_t g_lcd_message_until_ms;
 static char g_lcd_message[3];
+static uint32_t g_lcd_message_icons;  /* extra icons for the message, blinking */
 static int32_t g_last_temperature_x256;
 static uint16_t g_last_flags;
 static uint32_t g_have_last_measurement;
@@ -118,6 +121,10 @@ static uint32_t app_degree_icon(void);
 static void app_show_battery_percent(void);
 static void app_show_runtime(void);
 static void app_show_interval(uint32_t seconds);
+static void app_show_clock(void);
+static void app_battery_warning(uint32_t now_ms, uint32_t duration_ms);
+static uint32_t app_local_datetime(TempLogProDateTime *local);
+static uint32_t app_local_hour(void);
 static uint32_t app_base_icon_mask(uint32_t now_ms);
 static uint32_t app_view_icon_mask(uint32_t now_ms);
 static uint32_t app_runtime_unit_icon_mask(uint32_t seconds);
@@ -139,6 +146,7 @@ static uint32_t app_menu_sequence_index(LcdView view);
 
 static const LcdView LCD_MENU_SEQUENCE[] = {
     LCD_VIEW_TEMPERATURE,
+    LCD_VIEW_CLOCK,
     LCD_VIEW_STATE,
     /* Average first, then each measured extreme next to its alarm threshold. */
     LCD_VIEW_TEMP_AVG,
@@ -254,7 +262,12 @@ uint32_t templogpro_app_init(TempLogProAppMode mode)
     }
 
     g_last_user_activity_ms = HAL_GetTick();
-    app_lcd_message(app_state_text(), g_last_user_activity_ms, 900u);
+    if (templogpro_diag_interrupted_op() != TEMPLOGPRO_FLASH_OP_NONE) {
+        /* The battery gave out during CLR/START: say so for 5 s after boot. */
+        app_battery_warning(g_last_user_activity_ms, 5000u);
+    } else {
+        app_lcd_message(app_state_text(), g_last_user_activity_ms, 900u);
+    }
     app_update_lcd();
     app_update_leds(HAL_GetTick());
     return (g_app_state == TEMPLOGPRO_STATE_ERROR) ? 0u : 1u;
@@ -596,6 +609,7 @@ static void app_cycle_lcd_view_back(uint32_t now_ms)
 
 static void app_lcd_message(const char text[3], uint32_t now_ms, uint32_t duration_ms)
 {
+    g_lcd_message_icons = 0u;
     g_lcd_message[0] = text[0];
     g_lcd_message[1] = text[1];
     g_lcd_message[2] = text[2];
@@ -708,6 +722,32 @@ static uint32_t app_action_text(char text[3], uint32_t *icon_mask)
     return 0u;
 }
 
+/* Erasing a Winbond sector draws ~15-25 mA; a weak CR3450 then sags below the
+   reset threshold and the MCU restarts half-way. On battery, refuse CLR/START
+   below 2.7 V (also the W25X40 minimum) and blink the battery icon with X. */
+#define APP_FLASH_MIN_VDD_MV  2700u
+
+static uint32_t app_flash_power_ok(void)
+{
+    TempLogProDiagnostics diag;
+    uint16_t vdd_mv = 0u;
+
+    templogpro_diag_get(&diag);
+    if (diag.usb_vbus_present != 0u) {
+        return 1u;
+    }
+    if (templogpro_power_read_vdd_mv(&vdd_mv) == 0u) {
+        return 1u;  /* no reading: do not block the user */
+    }
+    return (vdd_mv >= APP_FLASH_MIN_VDD_MV) ? 1u : 0u;
+}
+
+static void app_battery_warning(uint32_t now_ms, uint32_t duration_ms)
+{
+    app_lcd_message("   ", now_ms, duration_ms);
+    g_lcd_message_icons = TEMPLOGPRO_LCD_ICON_BATTERY | TEMPLOGPRO_LCD_ICON_X;
+}
+
 static void app_execute_action(uint32_t now_ms)
 {
     AppAction action = g_pending_action;
@@ -717,9 +757,17 @@ static void app_execute_action(uint32_t now_ms)
     g_action_next_step_ms = 0u;
     g_action_digit = 0u;
 
+    if (((action == APP_ACTION_START) || (action == APP_ACTION_CLEAR)) && (app_flash_power_ok() == 0u)) {
+        g_app_state = g_action_return_state;
+        app_battery_warning(now_ms, 3000u);
+        return;
+    }
+
     if (action == APP_ACTION_START) {
         g_app_state = g_action_return_state;
+        templogpro_diag_flash_op_begin(TEMPLOGPRO_FLASH_OP_START);
         (void)templogpro_app_start_logging();
+        templogpro_diag_flash_op_end();
         return;
     }
 
@@ -738,7 +786,9 @@ static void app_execute_action(uint32_t now_ms)
         } else {
             g_app_state = g_action_return_state;
         }
+        templogpro_diag_flash_op_begin(TEMPLOGPRO_FLASH_OP_CLEAR);
         app_reset_logger(now_ms);
+        templogpro_diag_flash_op_end();
         if (g_app_state != TEMPLOGPRO_STATE_ERROR) {
             app_lcd_message("don", now_ms, 900u);
         }
@@ -857,7 +907,8 @@ static void app_update_lcd(void)
 
     if ((g_lcd_message_until_ms != 0u) &&
         ((int32_t)(now_ms - g_lcd_message_until_ms) < 0)) {
-        templogpro_hw_lcd_set_icon_mask(app_base_icon_mask(now_ms));
+        templogpro_hw_lcd_set_icon_mask(app_base_icon_mask(now_ms) |
+                                       ((((now_ms / 400u) & 1u) == 0u) ? g_lcd_message_icons : 0u));
         templogpro_hw_lcd_show_text3(g_lcd_message);
         return;
     }
@@ -931,6 +982,11 @@ static void app_update_lcd(void)
 
     if (g_lcd_view == LCD_VIEW_STATE) {
         templogpro_hw_lcd_show_text3(app_state_text());
+        return;
+    }
+
+    if (g_lcd_view == LCD_VIEW_CLOCK) {
+        app_show_clock();
         return;
     }
 
@@ -1179,6 +1235,43 @@ static void app_apply_lcd_timeout(uint32_t now_ms)
     g_lcd_message_until_ms = 0u;
 }
 
+/* Local wall clock (RTC in UTC + time zone), 12-hour "H:MM": the digit field
+   is "1 8:88", so hours 13-23 cannot be shown. The colon blinks every second. */
+static uint32_t app_local_datetime(TempLogProDateTime *local)
+{
+    TempLogProDateTime now;
+    uint32_t utc;
+
+    if ((templogpro_rtc_get(&now) == 0u) || (templogpro_rtc_datetime_to_timestamp(&now, &utc) == 0u)) {
+        return 0u;
+    }
+    return templogpro_rtc_timestamp_to_datetime(
+        (uint32_t)((int32_t)utc + (templogpro_tz_offset_minutes(&g_app_config, utc) * 60)), local);
+}
+
+static uint32_t app_local_hour(void)
+{
+    TempLogProDateTime local;
+
+    return (app_local_datetime(&local) != 0u) ? local.hour : 0u;
+}
+
+static void app_show_clock(void)
+{
+    TempLogProDateTime now;
+    uint32_t hour;
+
+    if (app_local_datetime(&now) == 0u) {
+        templogpro_hw_lcd_show_text3("---");
+        return;
+    }
+    hour = now.hour % 12u;
+    if (hour == 0u) {
+        hour = 12u;
+    }
+    templogpro_hw_lcd_show_clock12(hour, now.minute, ((now.second & 1u) == 0u) ? 1u : 0u);
+}
+
 static uint32_t app_base_icon_mask(uint32_t now_ms)
 {
     uint32_t mask = (app_logger_stopped() != 0u) ? TEMPLOGPRO_LCD_ICON_STOP : 0u;
@@ -1245,6 +1338,9 @@ static uint32_t app_view_icon_mask(uint32_t now_ms)
         return TEMPLOGPRO_LCD_ICON_PROBE | TEMPLOGPRO_LCD_ICON_TIME;
     case LCD_VIEW_RESET:
         return 0u;
+    case LCD_VIEW_CLOCK:
+        /* The sun marks afternoon/evening (12:00-23:59) on the 12-hour clock. */
+        return TEMPLOGPRO_LCD_ICON_TIME | ((app_local_hour() >= 12u) ? TEMPLOGPRO_LCD_ICON_SUN : 0u);
     case LCD_VIEW_LEDS:
         return TEMPLOGPRO_LCD_ICON_SUN;
     default:
@@ -1512,7 +1608,7 @@ static uint32_t flags_have_alarm(uint16_t flags)
 
 static LcdView app_sane_lcd_view(uint32_t lcd_mode)
 {
-    if ((lcd_mode <= (uint32_t)LCD_VIEW_RESET) &&
+    if ((lcd_mode <= (uint32_t)LCD_VIEW_CLOCK) &&
         ((g_app_config.lcd_menu_mask & (1u << lcd_mode)) != 0u)) {
         return (LcdView)lcd_mode;
     }

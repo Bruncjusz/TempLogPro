@@ -44,6 +44,7 @@
 #include "templogpro_logger.h"
 #include "templogpro_power.h"
 #include "templogpro_rtc.h"
+#include "templogpro_tz.h"
 #include "templogpro_usb_files.h"
 #include "usbd_msc.h"
 #include <string.h>
@@ -166,6 +167,8 @@ static void cdc_queue_text(USBD_HandleTypeDef *pdev, const char *text);
 static void cdc_process_char(USBD_HandleTypeDef *pdev, uint8_t ch);
 static void cdc_process_line(USBD_HandleTypeDef *pdev, const char *line);
 static void cdc_queue_u32(USBD_HandleTypeDef *pdev, uint32_t value);
+static void cdc_queue_datetime(USBD_HandleTypeDef *pdev, uint32_t timestamp);
+static void cdc_queue_time(USBD_HandleTypeDef *pdev);
 static void cdc_queue_s32(USBD_HandleTypeDef *pdev, int32_t value);
 static void cdc_queue_temp_x256(USBD_HandleTypeDef *pdev, int32_t temp_x256);
 static void cdc_queue_logger_status(USBD_HandleTypeDef *pdev);
@@ -756,6 +759,64 @@ static void cdc_queue_bytes(USBD_HandleTypeDef *pdev, const char *text, uint32_t
   cdc_tx_kick(pdev);
 }
 
+/* "YYYY-MM-DD HH:MM:SS" for a timestamp in seconds since 1970. */
+static void cdc_queue_datetime(USBD_HandleTypeDef *pdev, uint32_t timestamp)
+{
+  TempLogProDateTime dt;
+  char text[20];
+  uint32_t values[6];
+  static const char separators[6] = {'-', '-', ' ', ':', ':', 0};
+  uint32_t pos = 0U;
+  uint32_t i;
+
+  if (templogpro_rtc_timestamp_to_datetime(timestamp, &dt) == 0U) {
+    cdc_queue_text(pdev, "invalid");
+    return;
+  }
+  values[0] = dt.year;
+  values[1] = dt.month;
+  values[2] = dt.day;
+  values[3] = dt.hour;
+  values[4] = dt.minute;
+  values[5] = dt.second;
+  for (i = 0U; i < 6U; i++) {
+    uint32_t div = (i == 0U) ? 1000U : 10U;
+    while (div != 0U) {
+      text[pos++] = (char)('0' + ((values[i] / div) % 10U));
+      div /= 10U;
+    }
+    if (separators[i] != 0) {
+      text[pos++] = separators[i];
+    }
+  }
+  text[pos] = 0;
+  cdc_queue_text(pdev, text);
+}
+
+/* GET TIME: device clock (UTC) and the local time of the configured zone. */
+static void cdc_queue_time(USBD_HandleTypeDef *pdev)
+{
+  TempLogProDateTime now;
+  TempLogProConfig config;
+  uint32_t utc;
+  int32_t offset;
+
+  if ((templogpro_rtc_get(&now) == 0U) || (templogpro_rtc_datetime_to_timestamp(&now, &utc) == 0U)) {
+    cdc_queue_text(pdev, "ERR E005 rtc read failed\n");
+    return;
+  }
+  templogpro_config_get(&config);
+  offset = templogpro_tz_offset_minutes(&config, utc);
+  cdc_queue_text(pdev, "TIME utc=");
+  cdc_queue_datetime(pdev, utc);
+  cdc_queue_text(pdev, " local=");
+  cdc_queue_datetime(pdev, (uint32_t)((int32_t)utc + (offset * 60)));
+  cdc_queue_text(pdev, " offset=");
+  cdc_queue_text(pdev, (offset < 0) ? "-" : "+");
+  cdc_queue_u32(pdev, (uint32_t)((offset < 0) ? -offset : offset));
+  cdc_queue_text(pdev, "\n");
+}
+
 static void cdc_queue_text(USBD_HandleTypeDef *pdev, const char *text)
 {
   cdc_queue_bytes(pdev, text, (uint32_t)strlen(text));
@@ -1001,6 +1062,8 @@ static void cdc_process_line(USBD_HandleTypeDef *pdev, const char *line)
     cdc_config_len = 0U;
     cdc_config_overflow = 0U;
     cdc_queue_text(pdev, "OK CONFIG BEGIN\n");
+  } else if (cdc_text_equals(line, "GET TIME") != 0U) {
+    cdc_queue_time(pdev);
   } else if (cdc_text_starts(line, "SET TIME ") != 0U) {
     arg = cdc_skip_spaces(line + 9);
     if ((cdc_parse_datetime(arg, &dt) != 0U) && (templogpro_rtc_set(&dt) != 0U)) {

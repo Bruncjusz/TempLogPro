@@ -1,6 +1,6 @@
 # TempLogPro — dokumentacja i raport z projektu
 
-Wersja dokumentu: 2026-10-12 · firmware **1.0.0**
+Wersja dokumentu: 2026-10-13 · firmware **1.1.0**
 Autor projektu: **Brunon Kucharski** · opracowane we współpracy z **Codex (OpenAI)** i **Claude (Anthropic)**
 
 Instrukcja obsługi dla użytkownika: [docs/INSTRUKCJA.md](docs/INSTRUKCJA.md). Sprzęt, złącze SWD i pinout: [docs/HARDWARE.md](docs/HARDWARE.md).
@@ -33,7 +33,7 @@ Urządzenie:
 - raport HTML działa całkowicie offline w Chrome/Edge: wykres, przekroczenia,
   dane, ustawienia urządzenia przez Web Serial i eksport do PDF.
 
-**Stan na 2026-10-12:** firmware 1.0.0 wgrane i działające na urządzeniu,
+**Stan na 2026-10-13:** firmware 1.1.0 wgrane i działające na urządzeniu,
 wszystkie testy automatyczne przechodzą, panel i raport PDF zaakceptowane przez
 użytkownika. Najważniejszy otwarty problem: spadek napięcia baterii przy
 podłączonym USB (rozdział 12).
@@ -81,6 +81,7 @@ cyfrze. Polecenia z panelu przerywają lokalne odliczanie.
 | Nr bitu | Ekran | Ikony |
 | --- | --- | --- |
 | 0 | temperatura (zawsze dostępny; na USB napis `USB`) | TEMP, °C/°F |
+| 12 | zegar 12 h `H:MM` (czas lokalny strefy, dwukropek miga) | TIME, SUN po południu (12:00–23:59) |
 | 1 | stan loggera (`rdY` / `run` / `StP`) | PROBE |
 | 4 | średnia | TEMP + AVG |
 | 3 | maksimum | TEMP + MAX |
@@ -93,7 +94,7 @@ cyfrze. Polecenia z panelu przerywają lokalne odliczanie.
 | 10 | bateria (na USB `USB`) | bateria + % |
 | 11 | kasowanie (CLR) | — |
 
-Widoczność ekranów ustawia się w panelu (`lcd_menu_mask`). Po 10 s bez
+Widoczność ekranów ustawia się w panelu (`lcd_menu_mask`, 13 bitów; konfiguracje sprzed v7 dostają zegar włączony). Po 10 s bez
 dotykania ekran wraca do temperatury; na baterii cyfry gasną, zostają ikony
 stanu. Temperatura na LCD może być w °C albo °F (dane w pamięci zawsze w °C).
 
@@ -170,7 +171,19 @@ zakres widoczny na wykresie.
 | `TempLogPro.html` | raport i panel (alias 8.3: `TEMPLO~1.HTM`) |
 | `DATA.CSV` | `Sequence,Date,Time,Temperature_C,Code,UTC_Offset` — wszystkie wpisy; Date/Time w czasie lokalnym, `UTC_Offset` np. `+02:00` |
 | `README.TXT` | krótka instrukcja, autor, kody |
-| `POWER.TXT` | diagnostyka zasilania i uśpienia (programowa, nie pomiar prądu) |
+| `POWER.TXT` | diagnostyka zasilania i uśpienia (programowa, nie pomiar prądu); `LAST_RESET` = przyczyna ostatniego restartu |
+
+Przyczyny restartu (`LAST_RESET` w `POWER.TXT`, pole `reset` w danych raportu,
+wiersz „Ostatni restart” w zakładce Informacje): `POWER_ON` (włączenie zasilania
+lub spadek napięcia), `RESET_PIN` (NRST / programator), `SOFTWARE`, `WATCHDOG`,
+`POWER_DROP_CLEAR` / `POWER_DROP_START` (restart w trakcie kasowania pamięci
+przez CLR/START). Przed kasowaniem firmware zapisuje znacznik w rejestrze
+zapasowym RTC (`RTC_BKP2R` = `0x5A5A00xx`), a po skończonej operacji go zeruje;
+znacznik zastany przy starcie oznacza przerwaną operację. Na baterii CLR/START
+są odrzucane poniżej 2,7 V (minimum Winbond W25X40): przez 3 s migają ikony
+baterii i X. Po wykrytej przerwanej operacji ikona baterii miga 5 s po starcie.
+Pełny zanik zasilania (wyjęta bateria) zeruje rejestry zapasowe, więc wtedy
+raport pokaże zwykłe `POWER_ON`.
 
 Etykieta dysku: `TEMPLOGPRO`; w Windows: „TempLog Pro USB Device”, port
 szeregowy „USB Serial Device (COMx)”.
@@ -192,7 +205,7 @@ szeregowy „USB Serial Device (COMx)”.
 
 ## 6. Konfiguracja
 
-Format v6 (96 B), dwie kopie w Winbond (A `0x7F000`, B `0x00000`), wygrywa
+Format v7 (96 B, układ jak v6), dwie kopie w Winbond (A `0x7F000`, B `0x00000`), wygrywa
 poprawna kopia z wyższym numerem `generation`. Zapis zawsze nadpisuje kopię
 nieaktualną, więc przerwany zapis zostawia poprzednie ustawienia.
 
@@ -202,8 +215,8 @@ nieaktualną, więc przerwany zapis zostawia poprzednie ustawienia.
 | `temperature_low_c` / `temperature_high_c` | °C | progi alarmu |
 | `battery_mode` | 0/1 | oszczędzanie energii na baterii |
 | `usb_logging` | 0/1 | 1 = pomiary także na USB, 0 = USB tylko do raportów (START odmawia `E007`) |
-| `lcd_mode` | 0–11 | ekran po starcie |
-| `lcd_menu_mask` | 0–4095 | widoczne ekrany (bit 0 zawsze) |
+| `lcd_mode` | 0–12 | ekran po starcie |
+| `lcd_menu_mask` | 0–8191 | widoczne ekrany (bit 0 zawsze, bit 12 = zegar) |
 | `led_enable` | 0/1 | diody |
 | `temperature_unit` | C/F | jednostka na LCD |
 | `pdf_enable` | 0/1 | pole historyczne |
@@ -226,8 +239,11 @@ przesunięcie letnie według reguły „n-ta niedziela miesiąca o godzinie”
 (jak POSIX TZ, działa też na półkuli południowej). Reguła jest zapisana
 w konfiguracji, więc zmiany czasu w kolejnych latach liczą się same.
 
-- **Synchronizuj z komputerem** (Ustawienia → Czas i strefa czasowa) wysyła
-  czas UTC (`SET TIME`) i strefę komputera z regułą odczytaną z przeglądarki.
+- **Wstaw czas i strefę z komputera** (Ustawienia → Czas i strefa czasowa)
+  wypełnia pola strefą komputera i regułą z przeglądarki; **Zapisz w urządzeniu**
+  wysyła wszystko naraz, a przy zaznaczonym „Ustaw zegar przy zapisie” także
+  czas UTC (`SET TIME`). Panel odczytuje potem zegar (`GET TIME`) i pokazuje go
+  na żywo z różnicą względem komputera.
 - **Ręcznie**: wybór strefy, daty i godziny lokalnej oraz własnych momentów
   przejścia na czas letni i zimowy (np. gdy reguła przeglądarki nie pasuje).
 - **Raport**: znaczek strefy (np. `UTC+02:00 Europe/Warsaw · czas letni`),
@@ -248,6 +264,7 @@ Linie ASCII zakończone `\n`, maksymalnie 96 znaków. Najważniejsze polecenia:
 PING                      -> OK PING
 GET CONFIG                -> CONFIG BEGIN ... CONFIG END
 GET POWER                 -> POWER STATUS ...
+GET TIME                  -> TIME utc=YYYY-MM-DD HH:MM:SS local=YYYY-MM-DD HH:MM:SS offset=+120
 LOGGER STATUS             -> LOGGER STATUS app=RUN logger=LOGGING records=... capacity=... interval=... min=... max=... avg=...
 LOGGER START | LOGGER PAUSE
 LOGGER CLEAR CONFIRM      (samo LOGGER CLEAR jest odrzucane, E006)
@@ -402,6 +419,7 @@ kasuj Winbond ani nie rób mass erase bez świadomej decyzji i zrzutu pamięci.
 | 2026-10-09 | mapa LCD wg dokumentacji szkła, format zapisu v3 odporny na reset, podział `main.c` na sterowniki, menu LCD i °F (Claude) |
 | 2026-10-10 | nowy panel i raport PDF, wspólny heartbeat serca i diody, wersja 0.10.0 w jednym miejscu (Claude) |
 | 2026-10-10/11 | rebranding na TempLogPro: logo, nazwy, plik `TempLogPro.html`, nazwy w kodzie; nowy rytm diody alarmu (Claude) |
+| 2026-10-13 | **wersja 1.1.0**: zegar 12 h na LCD (słońce po południu), zegar urządzenia na żywo w panelu (`GET TIME`), nazwa `TempLogPro` w Windows, ochrona CLR/START przy baterii < 2,7 V, przyczyna restartu w `POWER.TXT` i raporcie, nowe zrzuty w instrukcji (Claude) |
 | 2026-10-12 | **wersja 1.0.0**: strefa czasowa i zmiana czasu (zegar w UTC, czas lokalny w CSV i raporcie), niższy pobór przy zatrzymanym loggerze, stały X ze strzałkami kierunku alarmu (Claude) |
 
 Szczegółowy dziennik zmian z sumami SHA-256 wgranych obrazów:

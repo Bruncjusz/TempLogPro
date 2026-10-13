@@ -101,9 +101,9 @@ for page, celsius in ((0, 29), (2, 26), (3, 31), (4, 28), (5, 24), (6, 32)):
 d.uc.mem_write(symbols['g_app_config'] + 36, struct.pack('<I', 0))
 check(d.show(0) == ('temperature', 29 * 256) and d.mask & CELSIUS and not d.mask & FAHRENHEIT)
 
-# Menu order: temperature, state, AVG, then each measured extreme beside its threshold.
-sequence = tuple(d.uc.mem_read(symbols['LCD_MENU_SEQUENCE'], 12))  # arm-none-eabi: 1-byte enums
-check(sequence == (0, 1, 4, 3, 6, 2, 5, 7, 8, 9, 10, 11))
+# Menu order: temperature, clock, state, AVG, then each measured extreme beside its threshold.
+sequence = tuple(d.uc.mem_read(symbols['LCD_MENU_SEQUENCE'], 13))  # arm-none-eabi: 1-byte enums
+check(sequence == (0, 12, 1, 4, 3, 6, 2, 5, 7, 8, 9, 10, 11))
 check(d.show(8) == ('value', 999) and d.mask & BIG)
 check(d.show(7) == ('value', 45) and d.mask & 0x4000)
 check(d.show(10) == ('value', 80) and d.mask & 0x2004 == 0x2004)
@@ -137,5 +137,16 @@ for value, active in ((0, (False, False, True)), (5, (False, False, True)),
         visible = any(ram[i] & (1 << ad) for i in (0, 2, 4, 6))
         visible |= any(ram[i] & (1 << eg) for i in (0, 2, 4))
         check(bool(visible) == expected)
+
+# 12-hour clock: leading "1" (RAM0 bit 25) only for 10-12, colon (RAM4 bit 14) blinks.
+d.addresses.pop(symbols['templogpro_hw_lcd_show_clock12'], None)
+for hours, minutes, colon in ((12, 5, 1), (9, 30, 0), (1, 0, 1)):
+    d.uc.mem_write(0x40002408, b'\x00'*4)
+    d.call('templogpro_hw_lcd_show_clock12', hours, minutes, colon)
+    ram = struct.unpack('<16I', d.uc.mem_read(0x40002414, 64))
+    check(bool(ram[0] & (1 << 25)) == (hours >= 10))
+    check(bool(ram[4] & (1 << 14)) == bool(colon))
+    tens = any(ram[i] & (1 << 12) for i in (0, 2, 4, 6)) or any(ram[i] & (1 << 6) for i in (0, 2, 4))
+    check(tens)  # minutes always show two digits, "9:30" and "1:00" alike
 
 print(f'LCD menu: {checks} checks passed (physical mapping not verified).')

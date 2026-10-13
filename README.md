@@ -13,21 +13,31 @@ offline — z wykresem, analizą przekroczeń, eksportem do PDF i ustawieniami
 urządzenia przez Web Serial.
 
 Autor: **Brunon Kucharski** · opracowane we współpracy z **Codex (OpenAI)** i **Claude (Anthropic)**
-Wersja firmware: **1.0.0** · licencja **MIT**
+Wersja firmware: **1.1.0** · licencja **MIT**
 
 ## Funkcje
 
 - pomiar co 1–600 s, do **42 284 wpisów** w pamięci Winbond, zapis odporny na reset i utratę zasilania;
 - dwa progi alarmu, wykrywanie przekroczeń i powrotu do zakresu;
-- oryginalny LCD: 12 konfigurowalnych ekranów, °C/°F, serce i zielona dioda jako heartbeat, X i czerwona dioda przy alarmie;
+- oryginalny LCD: 13 konfigurowalnych ekranów (w tym zegar 12 h), °C/°F, serce i zielona dioda jako heartbeat, X i czerwona dioda przy alarmie;
 - przyciski START/STOP z odliczaniem i anulowaniem, kasowanie logu z menu;
-- tryb STOP na baterii (~16 µA w spoczynku);
+- tryb STOP na baterii (~16 µA w spoczynku); ochrona CLR/START przy słabej baterii
+  (poniżej 2,7 V) i zapis przyczyny ostatniego restartu;
 - USB: dysk `TEMPLOGPRO` z plikami `TempLogPro.html`, `DATA.CSV`, `README.TXT`, `POWER.TXT` oraz port szeregowy do konfiguracji;
 - raport HTML offline (Chrome/Edge): werdykt, kafelki, wykres z zakresami i strefami „brak danych”, tabele, filtr pomiarów, CSV, PL/EN, motyw jasny/ciemny;
 - PDF: skrócony, standardowy i pełny, z własnym nagłówkiem, numeracją stron i polami „Uwagi / Sprawdził”;
 - strefa czasowa i zmiana czasu: zegar w UTC (log nigdy się nie cofa), czas lokalny w `DATA.CSV` i raporcie, znaczek strefy i znaczniki zmiany czasu na wykresie, synchronizacja z komputerem lub ustawienie ręczne.
 
-<p align="center"><img src="docs/assets/panel-settings.png" width="820" alt="Ustawienia TempLogPro"></p>
+<p align="center">
+<img src="docs/assets/panel-settings.png" width="405" alt="Ustawienia TempLogPro">
+<img src="docs/assets/panel-data.png" width="405" alt="Dane i przekroczenia">
+</p>
+<p align="center">
+<img src="docs/assets/panel-device.png" width="405" alt="Informacje o urządzeniu">
+<img src="docs/assets/panel-report-light.png" width="405" alt="Raport w jasnym motywie">
+</p>
+
+Więcej zrzutów z opisem każdego elementu: [instrukcja obsługi](docs/INSTRUKCJA.md#4-raport).
 
 ## Wgranie gotowego firmware
 

@@ -489,6 +489,23 @@ void templogpro_hw_lcd_suspend(void)
     }
 }
 
+void templogpro_hw_lcd_show_clock12(uint32_t hours, uint32_t minutes, uint32_t colon_on)
+{
+    lcd_clear_ram();
+    if (hours >= 10u) {
+        lcd_set(SEG_DIGIT_1000);
+        hours -= 10u;
+    }
+    lcd_draw_digit(0, hours % 10u);
+    lcd_draw_digit(1, (minutes / 10u) % 10u);
+    lcd_draw_digit(2, minutes % 10u);
+    if (colon_on != 0u) {
+        lcd_set(SEG_COLON);
+    }
+    lcd_apply_icons();
+    lcd_commit();
+}
+
 void templogpro_hw_lcd_show_value(uint16_t value)
 {
     lcd_show_value(value);

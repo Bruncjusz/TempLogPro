@@ -57,4 +57,15 @@ void templogpro_diag_get(TempLogProDiagnostics *diag);
 const char *templogpro_diag_error_name(TempLogProError error);
 const char *templogpro_diag_reset_flags_name(uint32_t flags);
 
+/* Memory-erasing operations started from the buttons. A marker in an RTC
+   backup register survives a brown-out reset, so the next boot can tell that
+   the battery gave out in the middle of CLR or START. */
+#define TEMPLOGPRO_FLASH_OP_NONE   0u
+#define TEMPLOGPRO_FLASH_OP_CLEAR  1u
+#define TEMPLOGPRO_FLASH_OP_START  2u
+void templogpro_diag_flash_op_begin(uint32_t op);
+void templogpro_diag_flash_op_end(void);
+uint32_t templogpro_diag_interrupted_op(void);   /* operation cut short by the last reset */
+const char *templogpro_diag_reset_cause(void);   /* POWER_DROP_CLEAR, POWER_ON, ... */
+
 #endif

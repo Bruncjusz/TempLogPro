@@ -4,7 +4,7 @@
 /* Single source of the firmware version and product name: README.TXT, STATUS,
    POWER.TXT, the USB descriptors and the HTML panel (tools/gen_panel.py
    substitutes {{FW_VERSION}}) all use it. */
-#define TEMPLOGPRO_FW_VERSION   "1.0.0"
+#define TEMPLOGPRO_FW_VERSION   "1.1.0"
 #define TEMPLOGPRO_PRODUCT_NAME "TempLogPro"
 #define TEMPLOGPRO_AUTHOR       "Brunon Kucharski"
 

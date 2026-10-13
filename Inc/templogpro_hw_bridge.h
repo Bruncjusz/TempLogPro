@@ -53,6 +53,8 @@ void templogpro_hw_led_red_off(void);
 void templogpro_hw_lcd_init(void);
 void templogpro_hw_lcd_suspend(void);
 void templogpro_hw_lcd_show_value(uint16_t value);
+/* 12-hour clock "H:MM" (hours 1-12) with the colon on or off. */
+void templogpro_hw_lcd_show_clock12(uint32_t hours, uint32_t minutes, uint32_t colon_on);
 void templogpro_hw_lcd_show_text3(const char text[3]);
 void templogpro_hw_lcd_show_temperature_x256(int32_t temperature_x256, uint32_t heart_on);
 void templogpro_hw_lcd_show_vdd_mv(uint16_t millivolts);
