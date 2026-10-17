@@ -83,7 +83,7 @@ cyfrze. Polecenia z panelu przerywają lokalne odliczanie.
 | 0 | temperatura (zawsze dostępny; na USB napis `USB`) | TEMP, °C/°F |
 | 15 | diody LED: `On` / `OFF`; obsługa jak na karcie 12 (zapis `led_enable`) | SUN, PROBE |
 | 16 | tryb eco: na zmianę `Eco` i `On` / `OFF`; obsługa jak na karcie 12 (zapis `eco_mode`) | BATTERY |
-| 12 | zegar 12 h `H:MM` (czas lokalny strefy, dwukropek miga); przytrzymanie START włącza, STOP wyłącza tryb zegarka (odliczanie `On5…On0` / `OF5…OF0`, zapis `clock_mode`; na baterii < 2,7 V odmowa) | TIME, SUN po południu (12:00–23:59) |
+| 12 | zegar 12 h `H:MM` (czas lokalny strefy, dwukropek miga); przytrzymanie START włącza, STOP wyłącza tryb zegarka (odliczanie `On5…On0` / `OF5…OF0`, zapis `clock_mode`; przy słabej baterii odmowa) | TIME, SUN po południu (12:00–23:59) |
 | 1 | stan loggera (`rdY` / `run` / `StP`) | PROBE |
 | 4 | średnia | TEMP + AVG |
 | 3 | maksimum | TEMP + MAX |
@@ -169,7 +169,7 @@ zakres widoczny na wykresie.
   diody (zatrzask w `RTC_BKP4R`, kasowany przy CLR i nowym starcie); kody
   `T001` w `DATA.CSV` zostają bez zmian.
 - **Najniższe napięcie baterii** (`vbatMin`) — minimum VDD od startu urządzenia,
-  gdy pracowało na baterii; poniżej 2,7 V raport zaleca wymianę.
+  gdy pracowało na baterii (VDD + 0,55 V spadku na diodzie); poniżej 2,85 V raport zaleca wymianę.
 
 ---
 
@@ -189,7 +189,8 @@ lub spadek napięcia), `RESET_PIN` (NRST / programator), `SOFTWARE`, `WATCHDOG`,
 przez CLR/START). Przed kasowaniem firmware zapisuje znacznik w rejestrze
 zapasowym RTC (`RTC_BKP2R` = `0x5A5A00xx`), a po skończonej operacji go zeruje;
 znacznik zastany przy starcie oznacza przerwaną operację. Na baterii CLR/START
-są odrzucane poniżej 2,7 V (minimum Winbond W25X40): przez 3 s napis `bAt`
+są odrzucane, gdy VDD < 2,3 V (minimum Winbond W25X40CL; bateria ok. 2,85 V, bo zasila
+procesor przez diodę ze spadkiem ok. 0,55 V): przez 3 s napis `bAt`
 i migające ikony baterii i X (bez ptaszka i innych ikon). Po wykrytej przerwanej operacji ikona baterii miga 5 s po starcie.
 Pełny zanik zasilania (wyjęta bateria) zeruje rejestry zapasowe, więc wtedy
 raport pokaże zwykłe `POWER_ON`.
@@ -225,6 +226,7 @@ nieaktualną, więc przerwany zapis zostawia poprzednie ustawienia.
 | `battery_mode` | 0/1 | oszczędzanie energii na baterii |
 | `usb_logging` | 0/1 | 1 = pomiary także na USB, 0 = USB tylko do raportów (START odmawia `E007`) |
 | `lcd_mode` | 0–12 | ekran po starcie |
+| `lcd_order` | 14 numerów ekranów | kolejność ekranów po temperaturze, np. `12,15,16,1,4,3,6,2,5,7,8,9,10,11` (domyślna); zapisywana po 4 bity w wolnych bajtach 25–27, 29–31, 33 konfiguracji, same zera = domyślna |
 | `lcd_menu_mask` | 0–131071 | widoczne ekrany (bit 0 zawsze, bit 12 = zegar, 13 = OFF, 14 = tryb zegarka, 15 = diody, 16 = eco; bity 13 i 14 nieużywane - dawne karty OFF i trybu zegarka) |
 | `alarm_delay_min` | 0–240 | opóźnienie alarmu: X / czerwona dioda / przekroczenie w raporcie dopiero po tylu minutach ciągłego wyjścia poza zakres (bajt 57 konfiguracji) |
 | `eco_mode` | 0/1 | tryb eco: na baterii po 10 s bezczynności LCD całkiem wyłączone, bez serca i diod; budzenie tylko na pomiar |
@@ -348,8 +350,16 @@ reset. Czekając, logger budzi się na sam start oraz na każdą zmianę cyfr
 odliczania (`M:SS` co 1 s poniżej 21 min, potem co pełną minutę; w eco co
 najwyżej co 60 s). Przy słabej baterii start jest ponawiany co minutę.
 
-**Ostrzeżenie baterii**: na baterii poniżej 2,7 V ikona baterii świeci stale
-na zwykłych ekranach i przy wygaszonym ekranie.
+**Ostrzeżenie baterii**: na baterii przy VDD < 2,3 V (bateria ok. 2,85 V) ikona baterii świeci stale
+na zwykłych ekranach i przy wygaszonym ekranie. Ekran baterii liczy procenty na napięciu ogniwa (VDD + 0,55 V): 100 % od 3,15 V, 0 % przy 2,85 V;
+procesor wyłącza się przy ok. 2,3 V na baterii (VDD ok. 1,75 V).
+
+**Zegar (RTC) z kwarcu**: zegar startuje na wewnętrznym LSI (szybki start, ekran od razu działa), a gdy
+kwarc 32,768 kHz (LSE) wystartuje, firmware przenosi RTC i LCD na kwarc na stałe: zapamiętuje kalendarz
+i rejestry zapasowe, resetuje domenę RTC (to wyłącza też LSEON), ponownie startuje kwarc (maks. 3 s),
+przywraca rejestry i wpisuje godzinę powiększoną o czas oczekiwania. Wcześniej RTC chodził na LSI
+kalibrowanym raz względem kwarcu - przy zmianie napięcia za diodą baterii zegar spieszył się nawet o
+ok. 37 %. Kwarc: ok. ±1 min/miesiąc, kosztem ok. 0,5-1 µA. `POWER.TXT` pokazuje `RTC_SOURCE`.
 
 **Odświeżanie dysku**: po zmianie plików (START/STOP/CLR, zapis ustawień, OFF)
 dysk odpowiada „brak nośnika” na dwa zapytania TEST UNIT READY, więc Windows

@@ -75,7 +75,7 @@ PREVIEW_CSV = _preview_csv()
 
 PREVIEW_CONFIG = {'interval': 60, 'low': 24, 'high': 27.5, 'battery': 1, 'usbLogging': 1, 'lcd': 0,
 
-                  'lcdMenu': 131071, 'records': 243, 'capacity': 42284, 'pdf': 1, 'led': 1, 'unit': 0, 'reset': 'POWER_ON', 'clockMode': 0, 'ecoMode': 0, 'alarmDelay': 0, 'vbatMin': 2930,
+                  'lcdMenu': 131071, 'records': 243, 'capacity': 42284, 'pdf': 1, 'led': 1, 'unit': 0, 'reset': 'POWER_ON', 'clockMode': 0, 'ecoMode': 0, 'alarmDelay': 0, 'lcdOrder': [12, 15, 16, 1, 4, 3, 6, 2, 5, 7, 8, 9, 10, 11], 'vbatMin': 2930,
 
                   'tzName': 'Europe/Warsaw', 'tzStd': 60, 'tzDst': 60, 'tzStart': [3, 5, 0, 120], 'tzEnd': [10, 5, 0, 180]}
 

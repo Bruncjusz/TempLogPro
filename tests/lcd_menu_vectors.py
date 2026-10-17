@@ -76,7 +76,7 @@ for page, value in ((5, 24), (6, 32)):
             check(d.mask == CHECK | CELSIUS | PROBE | TEMP | (MIN if page == 5 else MAX))
 
 for page, value, icons in ((7, 45, 0x4000), (8, 999, 0x100 | BIG),
-                           (10, 80, 0x2004)):
+                           (10, 100, 0x2004)):  # VDD 2.8 V = cell 3.35 V behind the diode
     for elapsed in (0, 750, 1000, 4000):
         check(d.show(page, elapsed) == ('value', value))
         check(d.mask == CHECK | icons)
@@ -108,7 +108,7 @@ check(sequence == (0, 12, 15, 16, 1, 4, 3, 6, 2, 5, 7, 8, 9, 10, 11))
 check(d.show(15) == ('text', b'OFF') and d.mask & 0x00200100 == 0x00200100)
 check(d.show(8) == ('value', 999) and d.mask & BIG)
 check(d.show(7) == ('value', 45) and d.mask & 0x4000)
-check(d.show(10) == ('value', 80) and d.mask & 0x2004 == 0x2004)
+check(d.show(10) == ('value', 100) and d.mask & 0x2004 == 0x2004)  # VDD 2.8 V = cell 3.35 V
 
 check(d.show(1) == ('text', b'run') and d.mask & PROBE and not d.mask & STOP)
 d.set('g_app_state', 2)  # PAUSE

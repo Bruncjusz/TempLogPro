@@ -7,7 +7,7 @@
 #define TEMPLOGPRO_CONFIG_STATUS_DEFAULTS    2u
 #define TEMPLOGPRO_CONFIG_STATUS_ERROR       3u
 
-#define TEMPLOGPRO_CONFIG_TEXT_SIZE          512u
+#define TEMPLOGPRO_CONFIG_TEXT_SIZE          768u
 #define TEMPLOGPRO_LCD_MENU_ALL              0x1FFFFu /* cards 0-16 (12 clock, 13 OFF, 14 clock mode, 15 LEDs, 16 eco) */
 /* The LCD shows the interval as plain seconds on three digits. */
 #define TEMPLOGPRO_CONFIG_MAX_INTERVAL_S     600u
@@ -26,6 +26,11 @@ typedef struct
 } TempLogProDstRule;
 
 #define TEMPLOGPRO_TZ_NAME_SIZE              32u
+/* LCD cards after the temperature card, in their default order (view ids):
+   clock, LEDs, eco, state, avg, max, high, min, low, runtime, records,
+   interval, battery, clear. lcd_order holds a permutation of positions 1-14. */
+#define TEMPLOGPRO_LCD_ORDER_COUNT           14u
+#define TEMPLOGPRO_LCD_DEFAULT_CARDS         {0u, 12u, 15u, 16u, 1u, 4u, 3u, 6u, 2u, 5u, 7u, 8u, 9u, 10u, 11u}
 
 typedef struct
 {
@@ -47,6 +52,7 @@ typedef struct
     uint32_t clock_mode;                  /* 1: stopped logger on battery shows the clock */
     uint32_t eco_mode;                    /* 1: on battery the idle LCD, heart and LEDs go fully off */
     uint32_t alarm_delay_min;             /* 0-240: excursion must last this long to raise the alarm */
+    uint8_t lcd_order[TEMPLOGPRO_LCD_ORDER_COUNT]; /* default positions 1-14 in display order; all 0 = default */
 } TempLogProConfig;
 
 uint32_t templogpro_config_init(void);

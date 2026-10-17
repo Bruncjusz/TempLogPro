@@ -40,6 +40,8 @@ uint32_t templogpro_rtc_set_minimum_timestamp(uint32_t timestamp);
 void templogpro_rtc_clear_minimum_timestamp(void);
 uint32_t templogpro_rtc_monotonic_guard_active(void);
 uint32_t templogpro_rtc_monotonic_floor(void);
+/* 1 once after the RTC (and LCD) clock moved from LSI to the 32.768 kHz crystal. */
+uint32_t templogpro_rtc_take_clock_switched(void);
 uint32_t templogpro_rtc_take_event(void);
 uint32_t templogpro_rtc_datetime_to_timestamp(const TempLogProDateTime *dt, uint32_t *timestamp);
 uint32_t templogpro_rtc_timestamp_to_datetime(uint32_t timestamp, TempLogProDateTime *dt);

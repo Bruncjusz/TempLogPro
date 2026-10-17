@@ -165,7 +165,7 @@ wewnętrzny zegar może się z czasem spieszyć lub spóźniać.
 | Zegar urządzenia | po połączeniu widać zegar procesora na żywo (24 h) i różnicę względem komputera |
 | Oszczędzanie energii na baterii | zalecane włączone |
 | Praca na zasilaniu USB | *Pomiary i logowanie* albo *Tylko raporty i ustawienia* (wtedy przy USB zapis jest wstrzymany) |
-| Ekrany w menu LCD | które ekrany są dostępne przyciskami |
+| Ekrany w menu LCD | które ekrany są dostępne przyciskami i w jakiej kolejności — przeciągnij kafelek myszą (temperatura zawsze pierwsza); „Przywróć domyślną kolejność” cofa zmiany |
 
 <p align="center"><img src="assets/panel-settings.png" width="820" alt="Zakładka Ustawienia"></p>
 
@@ -179,6 +179,10 @@ Ustawienia są zapisywane w urządzeniu dopiero po kliknięciu **Zapisz w
 urządzeniu**. Przycisk **Odczytaj ustawienia** pobiera aktualne wartości.
 
 ---
+
+Skrócona instrukcja z obrazkami jest też w samym raporcie: zakładka **Instrukcja** w `TempLogPro.html`.
+
+<p align="center"><img src="assets/panel-help.png" width="820" alt="Zakładka Instrukcja"></p>
 
 ## 4. Raport
 
@@ -219,7 +223,7 @@ PDF zawsze drukuje się na jasnym tle.*
   opóźnienie nie są liczone jako przekroczenia: raport pokazuje je osobno
   jako „krótkie” (szare wiersze w tabeli), a werdykt zostaje zielony.
 - **Informacje** pokazują najniższe napięcie baterii od ostatniego startu
-  urządzenia; poniżej 2,7 V z dopiskiem „wymień baterię”.
+  urządzenia; poniżej 2,85 V z dopiskiem „wymień baterię”.
 
 ### PDF
 
@@ -276,7 +280,7 @@ ekran **CLR** i oba przyciski przez 3 s. Przed czyszczeniem zapisz raport lub
   (zależnie od ustawienia „Praca na zasilaniu USB”).
 - Ekran **Bateria** pokazuje przybliżony stan na podstawie napięcia.
 - Przed **CLR** i **START** na baterii urządzenie sprawdza napięcie. Poniżej
-  2,7 V odmawia: przez 3 s na ekranie jest `bAt` i migają ikona baterii i X, a stan się nie zmienia —
+  ok. 2,85 V na baterii (0 % na ekranie Bateria) odmawia: przez 3 s na ekranie jest `bAt` i migają ikona baterii i X, a stan się nie zmienia —
   kasowanie pamięci przy słabej baterii mogłoby zrestartować urządzenie.
   Wymień baterię albo podłącz USB.
 - Jeśli mimo to bateria „siądzie” w trakcie CLR/START, po ponownym starcie
@@ -301,8 +305,8 @@ ekran **CLR** i oba przyciski przez 3 s. Przed czyszczeniem zapisz raport lub
 | Zmiana czasu w złym dniu | Ustawienia → Zmiana czasu: **Ręcznie** i ustaw dni przejścia |
 | Krzyżyk miga, choć temperatura jest dobra | to pamiątka po wcześniejszym przekroczeniu; zniknie po wyczyszczeniu pamięci |
 | Windows pokazuje stare pliki | po START/STOP/CLR i zapisie ustawień dysk odświeża się sam (na chwilę znika); jeśli nie, odłącz i podłącz USB |
-| Ikona baterii świeci cały czas | napięcie baterii poniżej 2,7 V — wymień baterię (CLR/START są już blokowane) |
-| Po CLR/START napis `bAt`, migają bateria i X, nic się nie dzieje | za słaba bateria (poniżej 2,7 V) — wymień ją lub podłącz USB |
+| Ikona baterii świeci cały czas | bateria poniżej ok. 2,85 V (0 %) — wymień baterię (CLR/START są już blokowane) |
+| Po CLR/START napis `bAt`, migają bateria i X, nic się nie dzieje | za słaba bateria (poniżej ok. 2,85 V) — wymień ją lub podłącz USB |
 | Ekran całkiem pusty, przyciski nie reagują | urządzenie jest w trybie OFF — przytrzymaj oba przyciski 3 s albo podłącz USB |
 | Urządzenie samo się zrestartowało | sprawdź Informacje → Ostatni restart albo `LAST_RESET` w `POWER.TXT` |
 

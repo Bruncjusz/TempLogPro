@@ -486,7 +486,28 @@ i sprawdzony testem `lcd_segment_map_vectors.py` na obrazie.
   g_data_floor = najnowszy zapisany rekord (set_minimum_timestamp), CLR (logger_format) go zeruje.
   Na urządzeniu zegar był ~1 h 49 min do przodu - ustawiony na czas PC (pamięć pusta). Wgrane: bin
   `f1e55be0c993aa4fd2ca2565e45dc3caa5f321180984c6dde2489f07480d75aa`.
+  (Wypchnięte jako commit 67ed5e6 - stan roboczy.)
+- 2026-10-17: **kolejność ekranów LCD** z panelu (przeciąganie kafelków, numery pozycji, Przywróć
+  domyślną; temperatura zawsze pierwsza). Konfiguracja `lcd_order` (14 numerów ekranów) w wolnych
+  bajtach 25-27, 29-31, 33 (po 4 bity, zera = domyślna); battery/lcd_mode/pdf/led czytane jako bajty.
+  JSON `lcdOrder`; HTML_CONFIG_BLOCK_SIZE 576, CONFIG_TEXT_SIZE 768. Przyciski przewijają wg kolejności
+  (app_menu_card). Testy: start_alarm (54), panel_delay (17). Wgrane.
 
+- 2026-10-17: **dioda baterii**: bateria zasila MCU przez diodę ~0,55 V (pomiar użytkownika: 3,30 V na
+  baterii -> 2,75 V na padzie 3,3 V J2; logger gaśnie przy ~2,3 V na baterii). Próg 2,7 V (VDD) był za
+  wysoki - świeża CR3450 by go nie przeszła. Teraz TEMPLOGPRO_FLASH_MIN_VDD_MV 2300 (W25X40CL) dla
+  ikony i blokady CLR/START, procenty na napięciu ogniwa (VDD + 550 mV): 100 % od 3,15 V, 0 % przy
+  2,85 V; vbatMin w raporcie jako napięcie ogniwa. Zbudowane, czeka na wgranie (ST-Link bez rdzenia).
+
+- 2026-10-17: zakładka **Instrukcja** w panelu: 8 kart z obrazkami SVG w stylu ilustracji użytkownika
+  (niebieskie urządzenie, napis z LCD, dłoń na właściwym przycisku, plakietka 3 s) + legenda znaczków,
+  PL/EN, ok. 10 KB. Flash 221 KB / 256 KB. Poprawka diody wgrana. Uwaga: zegar spieszy ~37 %
+  (+80 min w 2 h 11 min) - do zbadania (RTC na LSI kalibrowanym raz względem LSE).
+
+- 2026-10-17: **RTC na kwarcu LSE** (rtc_switch_to_lse w templogpro_rtc_process po LSERDY): zapis kalendarza
+  i BKP0-19, RTCRST, ponowne LSEON (RTCRST je kasuje!), czekanie <= 3 s, odtworzenie BKP, kalendarz +czas
+  czekania; fallback na LSI. Hak LCD suspend zostaje na stałe, app re-inicjuje LCD po przełączeniu.
+  POWER.TXT: RTC_SOURCE. Przyczyna: LSI dryfował ~37 % (+80 min / 2 h 11 min) przy zmianie napięcia.
 ## Znane błędy, nienaprawione
 
 - Brak.

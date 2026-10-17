@@ -98,7 +98,6 @@ static uint16_t g_alarm_latched;      /* alarms that outlasted alarm_delay_min *
 static uint32_t g_exc_high_since;     /* start of the current excursion, UTC */
 static uint32_t g_exc_low_since;
 #define APP_ALARM_LATCH_MAGIC  0xA1A10000u
-#define APP_BATTERY_LOW_MV     2700u
 static uint32_t g_last_usb_active;
 static uint32_t g_last_background_ms;
 static AppAction g_pending_action;
@@ -171,6 +170,7 @@ static uint32_t app_battery_percent_from_vdd(uint16_t vdd_mv);
 static uint32_t flags_have_alarm(uint16_t flags);
 static LcdView app_sane_lcd_view(uint32_t lcd_mode);
 static uint32_t app_menu_sequence_index(LcdView view);
+static LcdView app_menu_card(uint32_t position);
 
 static const LcdView LCD_MENU_SEQUENCE[] = {
     LCD_VIEW_TEMPERATURE,
@@ -244,8 +244,7 @@ uint32_t templogpro_app_init(TempLogProAppMode mode)
     if (templogpro_rtc_init() != TEMPLOGPRO_RTC_STATUS_OK) {
         g_app_state = TEMPLOGPRO_STATE_ERROR;
     }
-    templogpro_rtc_set_wait_hook(0);
-    templogpro_rtc_set_clock_switch_hook(0);
+    templogpro_rtc_set_wait_hook(0);  /* the LCD suspend hook stays for the later move to the crystal */
     templogpro_diag_boot_stage(TEMPLOGPRO_BOOT_STAGE_RTC);
     templogpro_hw_lcd_init();
     app_show_loading(HAL_GetTick());
@@ -330,6 +329,9 @@ void templogpro_app_process(void)
 
     templogpro_app_apply_config();
     templogpro_rtc_process();
+    if ((templogpro_rtc_take_clock_switched() != 0u) && (g_lcd_hw_off == 0u)) {
+        templogpro_hw_lcd_init();  /* LCD clock moved from LSI to the crystal */
+    }
     templogpro_logger_process();
     app_process_rtc_events();
 
@@ -775,7 +777,7 @@ static uint32_t app_battery_low(void)
     if ((app_usb_active() != 0u) || (templogpro_power_read_vdd_mv(&vdd_mv) == 0u) || (vdd_mv == 0u)) {
         return 0u;
     }
-    return (vdd_mv < APP_BATTERY_LOW_MV) ? 1u : 0u;
+    return (vdd_mv < TEMPLOGPRO_FLASH_MIN_VDD_MV) ? 1u : 0u;
 }
 
 uint32_t templogpro_app_power_off_arm(void)
@@ -901,11 +903,11 @@ static void app_cycle_lcd_view(uint32_t now_ms)
 
     for (uint32_t step = 0u; step < LCD_MENU_SEQUENCE_COUNT; step++) {
         index = (index + 1u) % LCD_MENU_SEQUENCE_COUNT;
-        if ((g_app_config.lcd_menu_mask & (1u << LCD_MENU_SEQUENCE[index])) != 0u) {
+        if ((g_app_config.lcd_menu_mask & (1u << app_menu_card(index))) != 0u) {
             break;
         }
     }
-    g_lcd_view = LCD_MENU_SEQUENCE[index];
+    g_lcd_view = app_menu_card(index);
     g_lcd_message_until_ms = 0u;
     app_refresh_stats(now_ms);
     app_update_lcd();
@@ -917,11 +919,11 @@ static void app_cycle_lcd_view_back(uint32_t now_ms)
 
     for (uint32_t step = 0u; step < LCD_MENU_SEQUENCE_COUNT; step++) {
         index = (index + LCD_MENU_SEQUENCE_COUNT - 1u) % LCD_MENU_SEQUENCE_COUNT;
-        if ((g_app_config.lcd_menu_mask & (1u << LCD_MENU_SEQUENCE[index])) != 0u) {
+        if ((g_app_config.lcd_menu_mask & (1u << app_menu_card(index))) != 0u) {
             break;
         }
     }
-    g_lcd_view = LCD_MENU_SEQUENCE[index];
+    g_lcd_view = app_menu_card(index);
     g_lcd_message_until_ms = 0u;
     app_refresh_stats(now_ms);
     app_update_lcd();
@@ -1076,8 +1078,9 @@ static uint32_t app_action_text(char text[3], uint32_t *icon_mask)
 
 /* Erasing a Winbond sector draws ~15-25 mA; a weak CR3450 then sags below the
    reset threshold and the MCU restarts half-way. On battery, refuse CLR/START
-   below 2.7 V (also the W25X40 minimum) and blink the battery icon with X. */
-#define APP_FLASH_MIN_VDD_MV  2700u
+   when VDD is below the W25X40 minimum (cell ~2.85 V behind the diode) and
+   blink the battery icon with X. */
+#define APP_FLASH_MIN_VDD_MV  TEMPLOGPRO_FLASH_MIN_VDD_MV
 
 static uint32_t app_flash_power_ok(void)
 {
@@ -2049,17 +2052,20 @@ static uint32_t app_runtime_seconds(void)
     return g_cached_stats.active_seconds;
 }
 
+/* Percent of the usable CR3450 range, on the cell voltage (VDD + diode):
+   100 % from 3.15 V, 0 % at 2.85 V where CLR/START stop and the icon comes on. */
 static uint32_t app_battery_percent_from_vdd(uint16_t vdd_mv)
 {
-    uint32_t mv = vdd_mv;
+    uint32_t mv = (uint32_t)vdd_mv + TEMPLOGPRO_BATTERY_DIODE_MV;
+    uint32_t empty = TEMPLOGPRO_FLASH_MIN_VDD_MV + TEMPLOGPRO_BATTERY_DIODE_MV;
 
-    if (mv >= 3000u) {
+    if (mv >= 3150u) {
         return 100u;
     }
-    if (mv <= 2000u) {
+    if (mv <= empty) {
         return 0u;
     }
-    return ((mv - 2000u) * 100u + 500u) / 1000u;
+    return ((mv - empty) * 100u + ((3150u - empty) / 2u)) / (3150u - empty);
 }
 
 static uint32_t flags_have_alarm(uint16_t flags)
@@ -2083,9 +2089,20 @@ static uint32_t app_menu_sequence_index(LcdView view)
     uint32_t index;
 
     for (index = 0u; index < LCD_MENU_SEQUENCE_COUNT; index++) {
-        if (LCD_MENU_SEQUENCE[index] == view) {
+        if (app_menu_card(index) == view) {
             return index;
         }
     }
     return 0u;
+}
+
+/* Card at a menu position: temperature first, the rest in the order set in the
+   panel (lcd_order holds default positions; all zero = default order). */
+static LcdView app_menu_card(uint32_t position)
+{
+    if ((position != 0u) && (position < LCD_MENU_SEQUENCE_COUNT) && (g_app_config.lcd_order[0] != 0u) &&
+        (g_app_config.lcd_order[position - 1u] < LCD_MENU_SEQUENCE_COUNT)) {
+        return LCD_MENU_SEQUENCE[g_app_config.lcd_order[position - 1u]];
+    }
+    return LCD_MENU_SEQUENCE[position % LCD_MENU_SEQUENCE_COUNT];
 }

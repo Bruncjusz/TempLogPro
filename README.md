@@ -14,7 +14,7 @@ urządzenia przez Web Serial.
 
 Autor: **Brunon Kucharski** · opracowane we współpracy z **Codex (OpenAI)** i **Claude (Anthropic)**
 Wersja firmware: **1.1.0** · licencja **MIT**  
-_Gałąź main zawiera już funkcje przygotowywane do następnego wydania (tryb zegarka, eco, OFF, opóźniony start, opóźnienie alarmu, nowy wygląd panelu); gotowe wydania są w zakładce Releases._
+_Gałąź main zawiera już funkcje przygotowywane do następnego wydania (tryb zegarka, eco, OFF, opóźniony start, opóźnienie alarmu, nowy wygląd panelu, zegar z kwarcu, kolejność ekranów, instrukcja w panelu); gotowe wydania są w zakładce Releases._
 
 ## Funkcje
 
@@ -25,7 +25,7 @@ _Gałąź main zawiera już funkcje przygotowywane do następnego wydania (tryb 
 - tryb STOP na baterii (~16 µA w spoczynku), tryb eco (ekran i diody całkiem wygaszone,
   budzenie tylko na pomiar), tryb zegarka dla zatrzymanego loggera
   i wyłączenie do przechowywania (OFF, włączenie obu przyciskami); ochrona CLR/START przy słabej baterii
-  (poniżej 2,7 V) i zapis przyczyny ostatniego restartu;
+  (bateria poniżej ok. 2,85 V) i zapis przyczyny ostatniego restartu;
 - USB: dysk `TEMPLOGPRO` z plikami `TempLogPro.html`, `DATA.CSV`, `README.TXT`, `POWER.TXT` oraz port szeregowy do konfiguracji;
 - raport HTML offline (Chrome/Edge): werdykt, kafelki, wykres z zakresami i strefami „brak danych”, tabele, filtr pomiarów, CSV, PL/EN, motyw jasny/ciemny;
 - PDF: skrócony, standardowy i pełny, z własnym nagłówkiem, numeracją stron i polami „Uwagi / Sprawdził”;

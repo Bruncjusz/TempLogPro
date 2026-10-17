@@ -74,6 +74,10 @@ static uint32_t append_temp(char *buf, uint32_t pos, uint32_t max, int32_t temp_
 static void build_config_text(char *buf, uint32_t len);
 static uint32_t parse_config_text(const uint8_t *source, uint32_t length, TempLogProConfig *config);
 static uint32_t parse_u32_value(const uint8_t *text, uint32_t len, uint32_t *value);
+static uint32_t parse_order_value(const uint8_t *text, uint32_t len, uint8_t *order);
+static const uint8_t k_lcd_cards[TEMPLOGPRO_LCD_ORDER_COUNT + 1u] = TEMPLOGPRO_LCD_DEFAULT_CARDS;
+/* Spare high bytes of the small 32-bit fields hold the LCD order, a nibble per position. */
+static const uint8_t k_lcd_order_bytes[7] = {25u, 26u, 27u, 29u, 30u, 31u, 33u};
 static uint32_t parse_bool_value(const uint8_t *text, uint32_t len, uint32_t *value);
 static uint32_t parse_temp_value(const uint8_t *text, uint32_t len, int32_t *value_x256);
 static uint32_t key_equals(const uint8_t *text, uint32_t len, const char *key);
@@ -314,6 +318,11 @@ static void encode_config(const StoredConfig *config, uint8_t *raw)
     raw[61] = (uint8_t)config->value.eco_mode;
     raw[57] = (uint8_t)config->value.alarm_delay_min;  /* spare byte of the DST end rule */
     raw[51] = (uint8_t)(config->value.lcd_menu_mask >> 16);  /* spare byte of the DST start rule */
+    if (config->value.lcd_order[0] != 0u) {
+        for (uint32_t k = 0u; k < TEMPLOGPRO_LCD_ORDER_COUNT; k++) {
+            raw[k_lcd_order_bytes[k / 2u]] |= (uint8_t)(((config->value.lcd_order[k] - 1u) & 0x0Fu) << ((k & 1u) * 4u));
+        }
+    }
     memcpy(&raw[CONFIG_TZ_NAME_OFFSET], config->value.tz_name, TEMPLOGPRO_TZ_NAME_SIZE);
     raw[CONFIG_TZ_NAME_OFFSET + TEMPLOGPRO_TZ_NAME_SIZE - 1u] = 0u;
     crc = crc16_ccitt_local(raw, CONFIG_CRC_OFFSET);
@@ -382,11 +391,22 @@ static uint32_t decode_config(const uint8_t *raw, StoredConfig *config)
     config->value.interval_seconds = get_u32(raw, 12u);
     config->value.temperature_low_x256 = (int32_t)get_u32(raw, 16u);
     config->value.temperature_high_x256 = (int32_t)get_u32(raw, 20u);
-    config->value.battery_mode_enable = get_u32(raw, 24u);
-    config->value.lcd_mode = get_u32(raw, 28u);
-    config->value.pdf_enable = get_u32(raw, 32u);
+    config->value.battery_mode_enable = raw[24];  /* bytes 25-27, 29-31, 33: LCD order */
+    config->value.lcd_mode = raw[28];
+    config->value.pdf_enable = raw[32];
+    {
+        uint32_t any = 0u;
+
+        for (uint32_t k = 0u; k < 7u; k++) {
+            any |= raw[k_lcd_order_bytes[k]];
+        }
+        for (uint32_t k = 0u; k < TEMPLOGPRO_LCD_ORDER_COUNT; k++) {
+            config->value.lcd_order[k] = (any != 0u) ?
+                (uint8_t)(((raw[k_lcd_order_bytes[k / 2u]] >> ((k & 1u) * 4u)) & 0x0Fu) + 1u) : 0u;
+        }
+    }
     if (version >= CONFIG_LED_VERSION) {
-        config->value.led_enable = get_u32(raw, 36u);
+        config->value.led_enable = raw[36];
     } else {
         config->value.led_enable = 1u;
     }
@@ -490,6 +510,19 @@ static uint32_t config_is_sane(const TempLogProConfig *config)
         return 0u;
     }
     /* Home must remain reachable, even when every optional card is hidden. */
+    if (config->lcd_order[0] != 0u) {
+        uint32_t seen = 0u;
+
+        for (uint32_t k = 0u; k < TEMPLOGPRO_LCD_ORDER_COUNT; k++) {
+            if ((config->lcd_order[k] == 0u) || (config->lcd_order[k] > TEMPLOGPRO_LCD_ORDER_COUNT)) {
+                return 0u;
+            }
+            seen |= 1u << config->lcd_order[k];
+        }
+        if (seen != (((1u << TEMPLOGPRO_LCD_ORDER_COUNT) - 1u) << 1)) {
+            return 0u;  /* not a permutation */
+        }
+    }
     if (((config->lcd_menu_mask & 1u) == 0u) ||
         ((config->lcd_menu_mask & ~TEMPLOGPRO_LCD_MENU_ALL) != 0u)) {
         return 0u;
@@ -577,6 +610,15 @@ static void build_config_text(char *buf, uint32_t len)
     pos = append_u32(buf, pos, len, g_config.lcd_mode);
     pos = append_str(buf, pos, len, "\r\nlcd_menu_mask=");
     pos = append_u32(buf, pos, len, g_config.lcd_menu_mask);
+    pos = append_str(buf, pos, len, "\r\nlcd_order=");
+    for (uint32_t k = 0u; k < TEMPLOGPRO_LCD_ORDER_COUNT; k++) {
+        uint32_t slot = (g_config.lcd_order[0] != 0u) ? g_config.lcd_order[k] : (k + 1u);
+
+        if (k != 0u) {
+            pos = append_str(buf, pos, len, ",");
+        }
+        pos = append_u32(buf, pos, len, k_lcd_cards[slot]);
+    }
     pos = append_str(buf, pos, len, "\r\npdf_enable=");
     pos = append_u32(buf, pos, len, g_config.pdf_enable);
     pos = append_str(buf, pos, len, "\r\nled_enable=");
@@ -603,7 +645,7 @@ static void build_config_text(char *buf, uint32_t len)
     pos = append_str(buf, pos, len, "\r\nconfig_generation=");
     pos = append_u32(buf, pos, len, g_config_generation);
     pos = append_str(buf, pos, len, "\r\n# LCD: 0 temp, 1 state, 2 min, 3 max, 4 avg, 5 low, 6 high\r\n");
-    pos = append_str(buf, pos, len, "# LCD: 7 runtime, 8 records, 9 interval, 10 battery, 11 clear, 12 clock, 13 off, 14 clock mode, 15 leds, 16 eco\r\n");
+    pos = append_str(buf, pos, len, "# LCD: 7 runtime, 8 records, 9 interval, 10 battery, 11 clear, 12 clock, 15 leds, 16 eco\r\n");
     pos = append_str(buf, pos, len, "# tz_dst_*: month.week(5=last).weekday(0=Sun).minute; clock is UTC\r\n");
 
     (void)pos;
@@ -716,6 +758,11 @@ static uint32_t parse_config_text(const uint8_t *source, uint32_t length, TempLo
             }
             config->lcd_menu_mask = value_u32;
             parsed = 1u;
+        } else if (key_equals(&source[key_start], key_end - key_start, "lcd_order") != 0u) {
+            if (parse_order_value(&source[value_start], value_end - value_start, config->lcd_order) == 0u) {
+                return 0u;
+            }
+            parsed = 1u;
         } else if (key_equals(&source[key_start], key_end - key_start, "pdf_enable") != 0u) {
             if (parse_bool_value(&source[value_start], value_end - value_start, &value_u32) == 0u) {
                 return 0u;
@@ -793,6 +840,63 @@ static uint32_t parse_config_text(const uint8_t *source, uint32_t length, TempLo
         return 0u;
     }
     return config_is_sane(config);
+}
+
+/* "12,15,16,1,..." - the 14 cards after the temperature card by view id;
+   empty or the default order is stored as all zeros. */
+static uint32_t parse_order_value(const uint8_t *text, uint32_t len, uint8_t *order)
+{
+    uint8_t out[TEMPLOGPRO_LCD_ORDER_COUNT];
+    uint32_t count = 0u;
+    uint32_t pos = 0u;
+    uint32_t is_default = 1u;
+
+    if (len == 0u) {
+        memset(order, 0, TEMPLOGPRO_LCD_ORDER_COUNT);
+        return 1u;
+    }
+    while (pos < len) {
+        uint32_t value = 0u;
+        uint32_t digits = 0u;
+        uint32_t slot;
+
+        while ((pos < len) && (text[pos] >= '0') && (text[pos] <= '9') && (digits < 3u)) {
+            value = (value * 10u) + (uint32_t)(text[pos] - '0');
+            pos++;
+            digits++;
+        }
+        if ((digits == 0u) || (count >= TEMPLOGPRO_LCD_ORDER_COUNT)) {
+            return 0u;
+        }
+        for (slot = 1u; slot <= TEMPLOGPRO_LCD_ORDER_COUNT; slot++) {
+            if (k_lcd_cards[slot] == value) {
+                break;
+            }
+        }
+        if (slot > TEMPLOGPRO_LCD_ORDER_COUNT) {
+            return 0u;
+        }
+        out[count] = (uint8_t)slot;
+        if (slot != (count + 1u)) {
+            is_default = 0u;
+        }
+        count++;
+        if (pos < len) {
+            if (text[pos] != ',') {
+                return 0u;
+            }
+            pos++;
+        }
+    }
+    if (count != TEMPLOGPRO_LCD_ORDER_COUNT) {
+        return 0u;
+    }
+    if (is_default != 0u) {
+        memset(order, 0, TEMPLOGPRO_LCD_ORDER_COUNT);
+    } else {
+        memcpy(order, out, TEMPLOGPRO_LCD_ORDER_COUNT);
+    }
+    return 1u;  /* duplicates are rejected by config_is_sane */
 }
 
 static uint32_t parse_u32_value(const uint8_t *text, uint32_t len, uint32_t *value)

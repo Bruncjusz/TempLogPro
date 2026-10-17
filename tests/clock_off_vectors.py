@@ -225,7 +225,7 @@ for view, offset in ((LCD_VIEW_CLOCK_MODE, 92), (LCD_VIEW_LEDS, 24), (LCD_VIEW_E
 # Weak battery: refused after the countdown, nothing written, "bAt".
 d = ClockDevice()
 d.call('templogpro_config_init')
-d.vdd_mv = 2500
+d.vdd_mv = 2200  # VDD below the 2.3 V flash minimum
 d.addresses[symbols['templogpro_power_read_vdd_mv']] = d.read_vdd
 queue = []
 d.addresses[symbols['templogpro_buttons_poll']] = lambda a, b, c: queue.pop(0) if queue else 0

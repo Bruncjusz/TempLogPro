@@ -65,7 +65,7 @@ for action, state, expected in ((1,0,(1,0,0)), (2,1,(0,1,0)), (3,1,(0,1,1))):
 # the state stays as it was and nothing is marked in the backup register.
 for action, state in ((1,0), (3,1), (3,2)):
     d = ActionDevice(state, action)
-    d.vdd_mv = 2550
+    d.vdd_mv = 2200
     d.call('app_start_action', action, d.tick)
     for _ in range(6):
         d.advance(400)
@@ -133,8 +133,8 @@ def info(ptr,b,c):
 d.addresses[symbols['templogpro_logger_get_info']]=info
 prefix=bytes(d.uc.mem_read(symbols['HTML_PREFIX'],min(160000,0x08040000-symbols['HTML_PREFIX']))).split(b'\0')[0]
 offset=len(prefix)+d.call('templogpro_csv_get_size')
-check(d.call('templogpro_html_read',offset,OUT,448)==448)
-text=bytes(d.uc.mem_read(OUT,448)).decode()
+check(d.call('templogpro_html_read',offset,OUT,576)==576)
+text=bytes(d.uc.mem_read(OUT,576)).decode()
 cfg=json.loads(text.split('application/json">')[1].split('</script>')[0])
 check(cfg['lcdMenu']==4095 and cfg['capacity']==42284 and cfg['records']==1405)
 check(cfg['tzName']=='' and cfg['tzStd']==0 and cfg['tzDst']==0 and cfg['tzStart']==[0,0,0,0])

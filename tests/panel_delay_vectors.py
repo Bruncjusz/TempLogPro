@@ -37,6 +37,17 @@ def probe(delay, vbat):
               "let pd=(n)=>dtPop.querySelector(n).dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));$('cfgClock').value='2026-10-05T08:15';"
               "openPicker($('cfgClock'),$('cfgClock').parentNode);pd('[data-d=\"20\"]');pd('[data-a=\"h+\"]');document.dispatchEvent(new PointerEvent('pointerup'));pd('[data-a=\"ok\"]');r.picked=$('cfgClock').value;r.popClosed=!dtPop;"
               "let iv=$('cfgInterval'),before=+iv.value;iv.closest('.stepper').querySelector('.stepbtn.up').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));document.dispatchEvent(new PointerEvent('pointerup'));r.stepped=+iv.value-before;r.btnOrder=[...iv.closest('.stepper').children].map(e=>e.className||e.tagName).join('|');"
+              "document.querySelector('[data-tab=usb]').click();"
+              "setMenuOrder([1,12,15,16,4,3,6,2,5,7,8,9,10,11]);r.order1=lcdMenuOrder().join(',');"
+              "r.ordText=configText(readCfg()).includes('lcd_order=1,12,15,16,4,3,6,2,5,7,8,9,10,11');"
+              "r.nums=[...document.querySelectorAll('.lcd-menu-options .ord')].slice(0,3).map(e=>e.textContent).join(' ');"
+              "$('menuOrderReset').click();r.order2=lcdMenuOrder().join(',');"
+              "let L=v=>$('cfgMenu'+v).closest('label'),dt=new DataTransfer();"
+              "L(11).dispatchEvent(new DragEvent('dragstart',{bubbles:true,dataTransfer:dt}));"
+              "let tr=L(12).getBoundingClientRect();L(12).dispatchEvent(new DragEvent('dragover',{bubbles:true,cancelable:true,clientX:tr.left+3,clientY:tr.top+5,dataTransfer:dt}));"
+              "L(11).dispatchEvent(new DragEvent('dragend',{bubbles:true,dataTransfer:dt}));r.order3=lcdMenuOrder().slice(0,2).join(',');"
+              "r.tempFirst=+document.querySelector('.lcd-menu-options label input').value;"
+              "r.helpCards=$('helpGrid').children.length;r.helpSvg=$('helpGrid').querySelectorAll('svg').length;r.helpIcons=$('helpIcons').children.length;r.helpLcd=$('helpGrid').textContent.includes('bAt');"
               "}catch(e){r.err=String(e)}document.body.setAttribute('data-probe',JSON.stringify(r))},600))</script>")
     page_file = work / f'p{delay}_{vbat}.html'
     page_file.write_text(page.replace('</body>', script + '</body>'), encoding='utf-8')
@@ -57,6 +68,12 @@ check(r['wait'].endswith('25.10.2026 09:30') and r['waitCleared'] == '', 'start 
 check('alarm_delay_min=0' in r['cfgText'], 'config text carries the delay')
 check(r['picked'] == '2026-10-20T09:15' and r['popClosed'], 'calendar picks day and hour')
 check(r['stepped'] == 1 and r['btnOrder'].startswith('INPUT') and 'down' in r['btnOrder'].split('|')[1], 'stepper: value, then - and + on the right')
+
+check(r['order1'] == '1,12,15,16,4,3,6,2,5,7,8,9,10,11' and r['ordText'], 'LCD order set and sent in config text')
+check(r['nums'] == '1. 2. 3.', 'tiles numbered by position')
+check(r['order2'] == '12,15,16,1,4,3,6,2,5,7,8,9,10,11', 'restore default order')
+check(r['order3'] == '11,12' and r['tempFirst'] == 0, 'drag CLR before the clock; temperature stays first')
+check(r['helpCards'] == 8 and r['helpSvg'] == 8 and r['helpIcons'] == 7 and r['helpLcd'], 'guide tab: 8 illustrated cards and the icon legend')
 
 r = probe(12, 2650)
 check(r['alarm'] == 0 and r['short'] == 6 and r['verdict'] == 'verdict ok', '11-min excursions are short with a 12-min delay')

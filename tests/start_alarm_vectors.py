@@ -66,7 +66,7 @@ check(d.get('g_start_at') == 0 and d.starts == 0 and d.stops == 0)
 
 # Weak battery when the start is due: retried a minute later, nothing started.
 d = ClockDevice()
-d.vdd_mv = 2500
+d.vdd_mv = 2200
 d.addresses[symbols['templogpro_power_read_vdd_mv']] = d.read_vdd
 d.call('templogpro_app_schedule_start', d.ts + 5)
 d.ts += 5
@@ -106,16 +106,22 @@ check(d.show(1)[0] == 'text' and d.mask & ICON_X)
 
 # ---- low battery icon ----
 d = ClockDevice()
-d.addresses[symbols['templogpro_power_read_vdd_mv']] = lambda p, b, c: (d.uc.mem_write(p, struct.pack('<H', 2650)), 1)[1]
+d.addresses[symbols['templogpro_power_read_vdd_mv']] = lambda p, b, c: (d.uc.mem_write(p, struct.pack('<H', 2250)), 1)[1]
 d.show(1)
 check(d.mask & ICON_BATTERY)
-d.addresses[symbols['templogpro_power_read_vdd_mv']] = lambda p, b, c: (d.uc.mem_write(p, struct.pack('<H', 2750)), 1)[1]
+d.addresses[symbols['templogpro_power_read_vdd_mv']] = lambda p, b, c: (d.uc.mem_write(p, struct.pack('<H', 2350)), 1)[1]
 d.show(1)
 check(not d.mask & ICON_BATTERY)
 d = ClockDevice(usb=True)
-d.addresses[symbols['templogpro_power_read_vdd_mv']] = lambda p, b, c: (d.uc.mem_write(p, struct.pack('<H', 2650)), 1)[1]
+d.addresses[symbols['templogpro_power_read_vdd_mv']] = lambda p, b, c: (d.uc.mem_write(p, struct.pack('<H', 2250)), 1)[1]
 d.show(1)
 check(not d.mask & ICON_BATTERY)
+
+# battery card: percent of the usable cell range (VDD + 0.55 V diode; 2.85 V = 0 %, 3.15 V = 100 %)
+for vdd, pct in ((2450, 50), (2300, 0), (2250, 0), (2600, 100), (2375, 25)):
+    d = ClockDevice()
+    d.addresses[symbols['templogpro_power_read_vdd_mv']] = lambda p, b, c, v=vdd: (d.uc.mem_write(p, struct.pack('<H', v)), 1)[1]
+    check(d.show(10) == ('value', pct))
 
 # ---- config: alarm_delay_min ----
 d = ClockDevice()
@@ -126,6 +132,42 @@ for text, ok, expected in ((b'alarm_delay_min=15\n', 1, 15), (b'alarm_delay_min=
     check(d.call('templogpro_config_init') == 1)
     d.call('templogpro_config_get', OUT)
     check(struct.unpack('<I', d.uc.mem_read(OUT + ALARM_DELAY, 4))[0] == expected)
+
+# ---- LCD card order (panel drag & drop) ----
+LCD_ORDER = 104  # TempLogProConfig.lcd_order[14]
+d = ClockDevice()
+check(d.call('templogpro_config_init') in (1, 2))
+custom = b'lcd_order=1,12,15,16,4,3,6,2,5,7,8,9,10,11\n'                 # state moved to the front
+d.uc.mem_write(ARG, custom)
+check(d.call('templogpro_config_write_text', ARG, len(custom)) == 1)
+check(d.call('templogpro_config_init') == 1)                            # survives flash -> decode
+d.call('templogpro_config_get', OUT)
+check(list(d.uc.mem_read(OUT + LCD_ORDER, 14)) == [4, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
+n = d.call('templogpro_config_read_text', 0, OUT, 768)
+check(b'lcd_order=1,12,15,16,4,3,6,2,5,7,8,9,10,11' in bytes(d.uc.mem_read(OUT, 768)))
+for bad in (b'lcd_order=1,1,15,16,4,3,6,2,5,7,8,9,10,11\n', b'lcd_order=1,12,15\n', b'lcd_order=0,12,15,16,4,3,6,2,5,7,8,9,10,11\n'):
+    d.uc.mem_write(ARG, bad)
+    check(d.call('templogpro_config_write_text', ARG, len(bad)) == 0)
+default = b'lcd_order=12,15,16,1,4,3,6,2,5,7,8,9,10,11\n'               # default order is stored as zeros
+d.uc.mem_write(ARG, default)
+check(d.call('templogpro_config_write_text', ARG, len(default)) == 1)
+d.call('templogpro_config_get', OUT)
+check(list(d.uc.mem_read(OUT + LCD_ORDER, 14)) == [0] * 14)
+
+d = ClockDevice()                                                       # the buttons follow the order
+d.uc.mem_write(symbols['g_app_config'] + LCD_ORDER, bytes([4, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]))
+d.uc.mem_write(symbols['g_app_config'] + 32, struct.pack('<I', 0x1FFFF))
+queue = []
+d.addresses[symbols['templogpro_buttons_poll']] = lambda a, b, c: queue.pop(0) if queue else 0
+seen = []
+for _ in range(3):
+    queue.append(2)  # BUTTON_STOP_SHORT: next card
+    d.step(300)
+    seen.append(d.get('g_lcd_view') & 0xFF)
+check(seen == [1, 12, 15])
+queue.append(1)  # BUTTON_START_SHORT: back
+d.step(300)
+check(d.get('g_lcd_view') & 0xFF == 12)
 
 # ---- restart after a panel CLEAR ----
 d = ClockDevice(usb=True)

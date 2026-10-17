@@ -34,6 +34,12 @@ void templogpro_power_enter_idle(void);
 uint32_t templogpro_power_enter_stop(void);
 uint32_t templogpro_power_stop_count(void);
 void templogpro_power_system_reset(void);
+
+/* The battery feeds the MCU through a diode: VDD is about 0.55 V below the
+   cell (measured: 3.30 V on the battery pads -> 2.75 V at the J2 3.3 V pad). */
+#define TEMPLOGPRO_BATTERY_DIODE_MV   550u
+/* Below this VDD (cell ~2.85 V) the W25X40 is out of spec: battery "empty". */
+#define TEMPLOGPRO_FLASH_MIN_VDD_MV   2300u
 uint32_t templogpro_power_read_vdd_mv(uint16_t *vdd_millivolts);
 void templogpro_power_get_stats(TempLogProPowerStats *stats);
 

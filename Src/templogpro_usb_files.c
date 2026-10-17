@@ -11,7 +11,7 @@
 #include <string.h>
 
 #define CSV_RECORD_LINE_LEN      48u
-#define HTML_CONFIG_BLOCK_SIZE   448u
+#define HTML_CONFIG_BLOCK_SIZE   576u
 
 /* Date/Time are local time (stored UTC + UTC_Offset of that moment). */
 static const char CSV_HEADER[] = "Sequence,Date,Time,Temperature_C,Code,UTC_Offset\r\n";
@@ -425,6 +425,20 @@ static void html_config_block_build(char *buf, uint32_t len)
     pos = append_u32(buf, pos, len, config.led_enable);
     pos = append_str(buf, pos, len, ",\"unit\":");
     pos = append_u32(buf, pos, len, config.temperature_unit);
+    pos = append_str(buf, pos, len, ",\"lcdOrder\":[");
+    {
+        static const uint8_t cards[TEMPLOGPRO_LCD_ORDER_COUNT + 1u] = TEMPLOGPRO_LCD_DEFAULT_CARDS;
+
+        for (uint32_t k = 0u; k < TEMPLOGPRO_LCD_ORDER_COUNT; k++) {
+            uint32_t slot = (config.lcd_order[0] != 0u) ? config.lcd_order[k] : (k + 1u);
+
+            if (k != 0u) {
+                pos = append_str(buf, pos, len, ",");
+            }
+            pos = append_u32(buf, pos, len, cards[slot]);
+        }
+    }
+    pos = append_str(buf, pos, len, "]");
     pos = append_str(buf, pos, len, ",\"alarmDelay\":");
     pos = append_u32(buf, pos, len, config.alarm_delay_min);
     {
@@ -432,7 +446,9 @@ static void html_config_block_build(char *buf, uint32_t len)
 
         templogpro_power_get_stats(&power_stats);
         pos = append_str(buf, pos, len, ",\"vbatMin\":");
-        pos = append_u32(buf, pos, len, (power_stats.battery_time_ms != 0u) ? power_stats.vdd_min_millivolts : 0u);
+        /* cell voltage: VDD behind the diode + its drop */
+        pos = append_u32(buf, pos, len, ((power_stats.battery_time_ms != 0u) && (power_stats.vdd_min_millivolts != 0u)) ?
+                                            (power_stats.vdd_min_millivolts + TEMPLOGPRO_BATTERY_DIODE_MV) : 0u);
     }
     pos = append_str(buf, pos, len, ",\"ecoMode\":");
     pos = append_u32(buf, pos, len, config.eco_mode);
@@ -822,6 +838,8 @@ static void power_build(char *buf, uint32_t len)
     pos = append_str(buf, pos, len, "# Software telemetry, not a direct current measurement.\r\n\r\n");
     pos = append_str(buf, pos, len, "SOURCE=");
     pos = append_str(buf, pos, len, stats.usb_present ? "USB" : "BATTERY");
+    pos = append_str(buf, pos, len, "\r\nRTC_SOURCE=");
+    pos = append_str(buf, pos, len, templogpro_rtc_source_name());
     pos = append_str(buf, pos, len, "\r\nLAST_RESET=");
     pos = append_str(buf, pos, len, templogpro_diag_reset_cause());
     pos = append_str(buf, pos, len, "\r\nVDD_MV=");

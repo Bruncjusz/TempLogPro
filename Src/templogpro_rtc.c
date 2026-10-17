@@ -3,6 +3,8 @@
 #include "templogpro_diag.h"
 #include <stdint.h>
 
+uint32_t HAL_GetTick(void);
+
 #define REG32(a)                    (*(volatile uint32_t *)(a))
 
 #define RCC_CSR_REG                 REG32(0x40023834u)
@@ -117,6 +119,7 @@ static uint32_t weekday_from_date(const TempLogProDateTime *dt);
 static void rtc_set_prescaler_for_source(uint32_t source);
 static uint32_t rtc_select_clock(uint32_t *source);
 static void rtc_force_clock_source(uint32_t source);
+static void rtc_switch_to_lse(void);
 static uint32_t rtc_calibration_backup_valid(void);
 static uint32_t rtc_calibration_backup_checksum(uint32_t prer, uint32_t calr, uint32_t lsi_hz);
 static void rtc_calibration_init(void);
@@ -155,6 +158,8 @@ static uint32_t g_last_raw_timestamp;
 static uint32_t g_timestamp_offset;
 static uint32_t g_monotonic_guard_active;
 static uint32_t g_pending_rtc_events;
+static uint32_t g_clock_switched;
+#define RTC_BKP_SAVED_COUNT         20u   /* backup registers kept across the RTC domain reset */
 static TempLogProRtcWaitHook g_rtc_wait_hook;
 static TempLogProRtcClockSwitchHook g_rtc_clock_switch_hook;
 
@@ -266,6 +271,17 @@ void templogpro_rtc_process(void)
 
     if (g_rtc_source != RTC_SOURCE_LSI) {
         return;
+    }
+
+    /* The internal LSI drifts with supply voltage and temperature (tens of %
+       seen behind the battery diode). Once the 32.768 kHz crystal is running,
+       the RTC moves onto it for good; LSI stays only as a start-up fallback. */
+    if ((RCC_CSR_REG & RCC_CSR_LSERDY_BIT) != 0u) {
+        rtc_switch_to_lse();
+        return;
+    }
+    if ((RCC_CSR_REG & RCC_CSR_LSEON_BIT) == 0u) {
+        RCC_CSR_REG |= RCC_CSR_LSEON_BIT;  /* keep the crystal starting */
     }
 
     if (g_calibration_state == RTC_CALIB_STATE_RESTORE) {
@@ -831,9 +847,91 @@ static void rtc_calibration_timer_stop(void)
 
 static void rtc_calibration_lse_stop(void)
 {
-    if (g_rtc_source == RTC_SOURCE_LSI) {
-        RCC_CSR_REG &= ~RCC_CSR_LSEON_BIT;
+    /* The crystal is no longer stopped after calibrating LSI: the RTC switches
+       to it as soon as it is ready (rtc_switch_to_lse). */
+}
+
+/* Changing RTCSEL needs an RTC domain reset, which clears the calendar and the
+   backup registers: keep both, reset, select LSE, restore. The LCD runs from
+   the same clock, so it is suspended first and re-initialised by the app. */
+static void rtc_switch_to_lse(void)
+{
+    TempLogProDateTime now;
+    uint32_t have_time;
+    uint32_t saved[RTC_BKP_SAVED_COUNT];
+    uint32_t i;
+    uint32_t start_ms;
+
+    rtc_calibration_timer_stop();
+    have_time = rtc_calendar_read(&now);
+    for (i = 0u; i < RTC_BKP_SAVED_COUNT; i++) {
+        saved[i] = REG32(RTC_BASE + 0x50u + (i * 4u));
     }
+    if (g_rtc_clock_switch_hook != 0) {
+        g_rtc_clock_switch_hook();
+    }
+    RCC_APB1ENR_REG |= RCC_APB1ENR_PWREN_BIT;
+    PWR_CR_REG |= PWR_CR_DBP_BIT;
+    start_ms = HAL_GetTick();
+    rtc_force_clock_source(RTC_SOURCE_LSE);
+    /* RTCRST also clears LSEON: restart the crystal and wait (1-2 s) before the
+       calendar can be written again; the time is advanced by the wait. */
+    RCC_CSR_REG |= RCC_CSR_LSEON_BIT;
+    while (((RCC_CSR_REG & RCC_CSR_LSERDY_BIT) == 0u) && ((HAL_GetTick() - start_ms) < 3000u)) {
+        if (g_rtc_wait_hook != 0) {
+            g_rtc_wait_hook();
+        }
+    }
+    for (i = 0u; i < RTC_BKP_SAVED_COUNT; i++) {
+        REG32(RTC_BASE + 0x50u + (i * 4u)) = saved[i];
+    }
+    if (have_time != 0u) {
+        uint32_t ts;
+
+        if (templogpro_rtc_datetime_to_timestamp(&now, &ts) != 0u) {
+            (void)templogpro_rtc_timestamp_to_datetime(ts + ((HAL_GetTick() - start_ms + 500u) / 1000u), &now);
+        }
+    }
+    if ((RCC_CSR_REG & RCC_CSR_LSERDY_BIT) == 0u) {
+        /* The crystal did not come back: stay on LSI with the time kept. */
+        rtc_force_clock_source(RTC_SOURCE_LSI);
+        for (i = 0u; i < RTC_BKP_SAVED_COUNT; i++) {
+            REG32(RTC_BASE + 0x50u + (i * 4u)) = saved[i];
+        }
+        rtc_write_unlock();
+        if (rtc_enter_init_mode() != 0u) {
+            rtc_set_prescaler_for_source(RTC_SOURCE_LSI);
+            rtc_exit_init_mode();
+        }
+        rtc_write_lock();
+        if (have_time != 0u) {
+            (void)rtc_calendar_write(&now);
+        }
+        g_clock_switched = 1u;
+        return;
+    }
+    g_rtc_source = RTC_SOURCE_LSE;
+    g_measured_lsi_hz = 0u;
+    g_calibration_state = RTC_CALIB_STATE_IDLE;
+    g_calibration_status = RTC_CALIB_STATUS_NOT_NEEDED;
+    rtc_write_unlock();
+    if (rtc_enter_init_mode() != 0u) {
+        rtc_set_prescaler_for_source(RTC_SOURCE_LSE);  /* 128 x 256 = 32768 */
+        rtc_exit_init_mode();
+    }
+    rtc_write_lock();
+    if (have_time != 0u) {
+        (void)rtc_calendar_write(&now);
+    }
+    g_clock_switched = 1u;
+}
+
+uint32_t templogpro_rtc_take_clock_switched(void)
+{
+    uint32_t switched = g_clock_switched;
+
+    g_clock_switched = 0u;
+    return switched;
 }
 
 static uint32_t rtc_calibration_compute(uint32_t lsi_hz, uint32_t *prer, uint32_t *calr)
