@@ -115,7 +115,7 @@ for mask in (1,5,4095):
     check(d.call('templogpro_config_init') == 1)
     d.call('templogpro_config_get',OUT)
     check(struct.unpack('<I',d.uc.mem_read(OUT+32,4))[0] == mask)
-for mask in (0,2,4096,8193):
+for mask in (0,2,4096,131073):
     text=f'lcd_menu_mask={mask}\n'.encode()
     d.uc.mem_write(ARG,text)
     writes=d.flash_writes

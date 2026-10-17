@@ -32,8 +32,11 @@ typedef enum
     LCD_VIEW_BATTERY = 10,
     LCD_VIEW_RESET = 11,
     LCD_VIEW_CLOCK = 12,
-    LCD_VIEW_LEDS = 13,
-    LCD_VIEW_ICON_SCAN = 14
+    LCD_VIEW_OFF = 13,  /* retired card: OFF now lives on the battery card; menu bit 13 unused */
+    LCD_VIEW_CLOCK_MODE = 14,  /* retired card (now on the clock card); menu bit 14 unused */
+    LCD_VIEW_LEDS = 15,
+    LCD_VIEW_ECO = 16,
+    LCD_VIEW_ICON_SCAN = 17
 } LcdView;
 
 typedef enum
@@ -41,7 +44,11 @@ typedef enum
     APP_ACTION_NONE = 0,
     APP_ACTION_START,
     APP_ACTION_STOP,
-    APP_ACTION_CLEAR
+    APP_ACTION_CLEAR,
+    APP_ACTION_POWER_ON,
+    APP_ACTION_OFF,
+    APP_ACTION_CARD_ON,   /* clock mode / LED card: hold START, countdown, on */
+    APP_ACTION_CARD_OFF   /* clock mode / LED card: hold STOP, countdown, off */
 } AppAction;
 
 #define LCD_HOME_TIMEOUT_MS                10000u
@@ -82,6 +89,9 @@ static uint32_t g_stats_cache_valid;
 static uint32_t g_next_stats_refresh_ms;
 static uint32_t g_last_user_activity_ms;
 static uint32_t g_lcd_awake;
+static uint32_t g_off_armed;   /* OFF requested over USB, waits for unplug */
+static uint32_t g_off_active;  /* OFF: LCD, LEDs and RTC wake-ups disabled */
+static uint32_t g_lcd_hw_off;  /* LCD controller switched off (eco or OFF) */
 static uint32_t g_last_usb_active;
 static uint32_t g_last_background_ms;
 static AppAction g_pending_action;
@@ -112,7 +122,8 @@ static void app_process_rtc_events(void);
 static void app_store_measurement(int32_t temp_x256, uint32_t valid);
 static uint32_t app_next_measurement_deadline(uint32_t deadline, uint32_t now_ts);
 static void app_reset_logger(uint32_t now_ms);
-static void app_toggle_leds(uint32_t now_ms);
+static void app_set_card_option(LcdView view, uint32_t enable, uint32_t now_ms);
+static uint32_t app_is_option_card(LcdView view);
 static void app_apply_lcd_timeout(uint32_t now_ms);
 static void app_refresh_stats(uint32_t now_ms);
 static void app_show_stats_temperature(int32_t value_x256, uint32_t valid);
@@ -121,7 +132,11 @@ static uint32_t app_degree_icon(void);
 static void app_show_battery_percent(void);
 static void app_show_runtime(void);
 static void app_show_interval(uint32_t seconds);
-static void app_show_clock(void);
+static void app_show_clock(uint32_t steady_colon);
+static uint32_t app_clock_mode_active(void);
+static uint32_t app_eco_dark(void);
+static void app_enter_off(uint32_t now_ms);
+static void app_exit_off(uint32_t now_ms);
 static void app_battery_warning(uint32_t now_ms, uint32_t duration_ms);
 static uint32_t app_local_datetime(TempLogProDateTime *local);
 static uint32_t app_local_hour(void);
@@ -147,6 +162,8 @@ static uint32_t app_menu_sequence_index(LcdView view);
 static const LcdView LCD_MENU_SEQUENCE[] = {
     LCD_VIEW_TEMPERATURE,
     LCD_VIEW_CLOCK,
+    LCD_VIEW_LEDS,
+    LCD_VIEW_ECO,
     LCD_VIEW_STATE,
     /* Average first, then each measured extreme next to its alarm threshold. */
     LCD_VIEW_TEMP_AVG,
@@ -298,12 +315,31 @@ void templogpro_app_process(void)
             g_last_user_activity_ms = now_ms;
         }
 
-        if (button_event != BUTTON_NONE) {
+        if (g_off_active != 0u) {
+            /* OFF: only both buttons held start the 3-2-1 power-on countdown. */
+            if ((button_mask == 3u) && (g_action_active == 0u)) {
+                templogpro_hw_lcd_init();
+                g_lcd_hw_off = 0u;
+                app_start_action(APP_ACTION_POWER_ON, now_ms);
+            }
+        } else if (button_event != BUTTON_NONE) {
             app_handle_button_event(button_event, now_ms);
         }
     }
 
     app_process_action(now_ms);
+
+    {
+        TempLogProDiagnostics off_diag;
+
+        templogpro_diag_get(&off_diag);
+        if ((g_off_active != 0u) && (off_diag.usb_vbus_present != 0u)) {
+            app_exit_off(now_ms);
+        } else if ((g_off_armed != 0u) && (off_diag.usb_vbus_present == 0u) && (g_action_active == 0u) &&
+                   ((g_lcd_message_until_ms == 0u) || ((int32_t)(now_ms - g_lcd_message_until_ms) >= 0))) {
+            app_enter_off(now_ms);
+        }
+    }
 
     if ((g_app_state == TEMPLOGPRO_STATE_RUN) &&
         (templogpro_app_usb_report_mode() == 0u) &&
@@ -472,6 +508,11 @@ uint32_t templogpro_app_should_stop_sleep(void)
     TempLogProDiagnostics diag;
     uint32_t now_ms = HAL_GetTick();
 
+    if (g_off_active != 0u) {
+        templogpro_diag_get(&diag);
+        return ((g_action_active == 0u) && (templogpro_buttons_current_mask() == 0u) &&
+                (diag.usb_vbus_present == 0u) && (templogpro_logger_flash_is_busy() == 0u)) ? 1u : 0u;
+    }
     if (templogpro_app_should_idle_sleep() == 0u) {
         return 0u;
     }
@@ -490,6 +531,9 @@ uint32_t templogpro_app_should_stop_sleep(void)
         return 0u;
     }
 
+    if (app_eco_dark() != 0u) {
+        return 1u;  /* eco: no heartbeat, no LEDs - nothing to stay awake for */
+    }
     if (app_measure_pulse_active(now_ms) != 0u) {
         return 0u;
     }
@@ -506,13 +550,104 @@ uint32_t templogpro_app_should_stop_sleep(void)
    insertion wake the MCU by interrupt, so a 60 s tick adds no visible lag. */
 uint32_t templogpro_app_stop_wake_seconds(void)
 {
+    TempLogProDateTime now;
+    uint32_t wake_s = 60u;
+
+    if (g_off_active != 0u) {
+        return 0u;
+    }
+    if (app_eco_dark() != 0u) {
+        /* Eco: logging wakes only for the next measurement, a stopped logger once a minute. */
+        uint32_t now_ts;
+
+        if ((g_app_state == TEMPLOGPRO_STATE_RUN) && (templogpro_rtc_get_timestamp(&now_ts) != 0u)) {
+            if ((g_next_measurement_timestamp == 0u) || ((int32_t)(g_next_measurement_timestamp - now_ts) <= 1)) {
+                return 1u;
+            }
+            wake_s = g_next_measurement_timestamp - now_ts;
+            return (wake_s > 60u) ? 60u : wake_s;
+        }
+        return ((g_app_state == TEMPLOGPRO_STATE_READY) || (g_app_state == TEMPLOGPRO_STATE_PAUSE)) ? 60u : 1u;
+    }
     if ((g_app_state != TEMPLOGPRO_STATE_READY) && (g_app_state != TEMPLOGPRO_STATE_PAUSE)) {
         return 1u;
     }
-    if ((g_app_config.led_enable != 0u) && (app_alarm_or_error_active() != 0u)) {
-        return 3u;
+    /* Clock mode: wake on the next full minute to redraw H:MM (steady colon). */
+    if ((app_clock_mode_active() != 0u) && (templogpro_rtc_get(&now) != 0u) && (now.second < 60u)) {
+        wake_s = 60u - now.second;
     }
-    return 60u;
+    if ((g_app_config.led_enable != 0u) && (app_alarm_or_error_active() != 0u) && (wake_s > 3u)) {
+        wake_s = 3u;
+    }
+    return wake_s;
+}
+
+/* Eco on battery with the display asleep: LCD controller off, no heart, no LEDs. */
+static uint32_t app_eco_dark(void)
+{
+    return ((g_app_config.eco_mode != 0u) && (g_lcd_awake == 0u) && (g_off_active == 0u) &&
+            (g_action_active == 0u) && (app_usb_active() == 0u)) ? 1u : 0u;
+}
+
+static uint32_t app_clock_mode_active(void)
+{
+    return ((g_app_config.clock_mode != 0u) && (g_app_config.eco_mode == 0u) && (g_off_active == 0u) &&
+            ((g_app_state == TEMPLOGPRO_STATE_READY) || (g_app_state == TEMPLOGPRO_STATE_PAUSE) ||
+             (g_app_state == TEMPLOGPRO_STATE_RUN)) &&
+            (app_usb_active() == 0u)) ? 1u : 0u;
+}
+
+uint32_t templogpro_app_power_off_arm(void)
+{
+    if ((g_app_state == TEMPLOGPRO_STATE_RUN) && (templogpro_app_stop_logging() == 0u)) {
+        return 0u;
+    }
+    if ((g_app_state != TEMPLOGPRO_STATE_READY) && (g_app_state != TEMPLOGPRO_STATE_PAUSE)) {
+        return 0u;
+    }
+    g_off_armed = 1u;
+    return 1u;
+}
+
+void templogpro_app_power_off_cancel(void)
+{
+    g_off_armed = 0u;
+}
+
+uint32_t templogpro_app_power_off_armed(void)
+{
+    return g_off_armed;
+}
+
+static void app_enter_off(uint32_t now_ms)
+{
+    g_off_armed = 0u;
+    if (g_app_state == TEMPLOGPRO_STATE_RUN) {
+        (void)templogpro_app_stop_logging();  /* started again after arming */
+    }
+    app_cancel_action(now_ms);
+    templogpro_sensor_cancel();
+    g_off_active = 1u;
+    g_lcd_awake = 0u;
+    g_lcd_message_until_ms = 0u;
+    templogpro_hw_led_green_off();
+    templogpro_hw_led_red_off();
+    templogpro_hw_lcd_set_icon_mask(0u);
+    templogpro_hw_lcd_show_text3("   ");
+    templogpro_hw_lcd_suspend();
+    g_lcd_hw_off = 1u;
+}
+
+static void app_exit_off(uint32_t now_ms)
+{
+    g_off_active = 0u;
+    templogpro_hw_lcd_init();
+    g_lcd_hw_off = 0u;
+    g_lcd_awake = 1u;
+    g_lcd_view = LCD_VIEW_TEMPERATURE;
+    g_last_user_activity_ms = now_ms;
+    app_lcd_message(app_state_text(), now_ms, 900u);
+    app_update_lcd();
 }
 
 static void app_handle_button_event(TempLogProButtonEvent event, uint32_t now_ms)
@@ -550,13 +685,17 @@ static void app_handle_button_event(TempLogProButtonEvent event, uint32_t now_ms
         break;
 
     case BUTTON_START_LONG_CONFIRMED:
-        if ((g_app_state == TEMPLOGPRO_STATE_READY) || (g_app_state == TEMPLOGPRO_STATE_PAUSE)) {
+        if (app_is_option_card(g_lcd_view) != 0u) {
+            app_start_action(APP_ACTION_CARD_ON, now_ms);  /* START = on, never START logging */
+        } else if ((g_app_state == TEMPLOGPRO_STATE_READY) || (g_app_state == TEMPLOGPRO_STATE_PAUSE)) {
             app_start_action(APP_ACTION_START, now_ms);
         }
         break;
 
     case BUTTON_STOP_LONG_CONFIRMED:
-        if (g_app_state == TEMPLOGPRO_STATE_RUN) {
+        if (app_is_option_card(g_lcd_view) != 0u) {
+            app_start_action(APP_ACTION_CARD_OFF, now_ms);  /* STOP = off, never STOP logging */
+        } else if (g_app_state == TEMPLOGPRO_STATE_RUN) {
             app_start_action(APP_ACTION_STOP, now_ms);
         }
         break;
@@ -564,8 +703,8 @@ static void app_handle_button_event(TempLogProButtonEvent event, uint32_t now_ms
     case BUTTON_BOTH_LONG_CONFIRMED:
         if (g_lcd_view == LCD_VIEW_RESET) {
             app_start_action(APP_ACTION_CLEAR, now_ms);
-        } else if (g_lcd_view == LCD_VIEW_LEDS) {
-            app_toggle_leds(now_ms);
+        } else if (g_lcd_view == LCD_VIEW_BATTERY) {  /* power card: both buttons = OFF */
+            app_start_action(APP_ACTION_OFF, now_ms);
         }
         break;
 
@@ -626,8 +765,8 @@ static void app_start_action(AppAction action, uint32_t now_ms)
     g_action_return_state = g_app_state;
     g_action_return_view = g_lcd_view;
     g_action_active = 1u;
-    g_action_digit = 5u;
-    g_action_next_step_ms = now_ms + APP_ACTION_STEP_MS;
+    g_action_digit = (action == APP_ACTION_POWER_ON) ? 3u : 5u;
+    g_action_next_step_ms = now_ms + ((action == APP_ACTION_POWER_ON) ? 1000u : APP_ACTION_STEP_MS);
     g_lcd_awake = 1u;
     g_lcd_message_until_ms = 0u;
 
@@ -653,8 +792,8 @@ static void app_process_action(uint32_t now_ms)
         return;
     }
 
-    required_mask = (g_pending_action == APP_ACTION_START) ? 1u :
-                    (g_pending_action == APP_ACTION_STOP) ? 2u : 3u;
+    required_mask = ((g_pending_action == APP_ACTION_START) || (g_pending_action == APP_ACTION_CARD_ON)) ? 1u :
+                    ((g_pending_action == APP_ACTION_STOP) || (g_pending_action == APP_ACTION_CARD_OFF)) ? 2u : 3u;
     if ((templogpro_buttons_current_mask() != required_mask) ||
         (g_app_state == TEMPLOGPRO_STATE_ERROR)) {
         app_cancel_action(now_ms);
@@ -665,9 +804,9 @@ static void app_process_action(uint32_t now_ms)
         return;
     }
 
-    if (g_action_digit > 0u) {
+    if (g_action_digit > ((g_pending_action == APP_ACTION_POWER_ON) ? 1u : 0u)) {
         g_action_digit--;
-        g_action_next_step_ms = now_ms + APP_ACTION_STEP_MS;
+        g_action_next_step_ms = now_ms + ((g_pending_action == APP_ACTION_POWER_ON) ? 1000u : APP_ACTION_STEP_MS);
         app_update_lcd();
         return;
     }
@@ -687,9 +826,19 @@ static void app_cancel_action(uint32_t now_ms)
     if (g_app_state != TEMPLOGPRO_STATE_ERROR) {
         g_app_state = g_action_return_state;
     }
-    g_lcd_view = app_sane_lcd_view(g_action_return_view);
+    /* Stay on the card the action started from (CLR, OFF, clock mode, LEDs...). */
+    g_lcd_view = (g_action_return_view <= LCD_VIEW_ECO) ? g_action_return_view : LCD_VIEW_TEMPERATURE;
     g_lcd_message_until_ms = 0u;
     g_last_user_activity_ms = now_ms;
+    if (g_off_active != 0u) {
+        /* Released too early: back to OFF. */
+        g_lcd_awake = 0u;
+        templogpro_hw_lcd_set_icon_mask(0u);
+        templogpro_hw_lcd_show_text3("   ");
+        templogpro_hw_lcd_suspend();
+        g_lcd_hw_off = 1u;
+        return;
+    }
     app_update_lcd();
 }
 
@@ -718,6 +867,28 @@ static uint32_t app_action_text(char text[3], uint32_t *icon_mask)
         text[1] = ' ';
         return 1u;
     }
+    if (g_pending_action == APP_ACTION_POWER_ON) {
+        text[0] = ' ';
+        text[1] = ' ';
+        return 1u;
+    }
+    if (g_pending_action == APP_ACTION_OFF) {
+        text[0] = 'o';
+        text[1] = ' ';
+        return 1u;
+    }
+    if (g_pending_action == APP_ACTION_CARD_ON) {
+        text[0] = 'O';  /* "On5" ... "On0" */
+        text[1] = 'n';
+        *icon_mask = app_view_icon_mask(HAL_GetTick());
+        return 1u;
+    }
+    if (g_pending_action == APP_ACTION_CARD_OFF) {
+        text[0] = 'O';  /* "OF5" ... "OF0" */
+        text[1] = 'F';
+        *icon_mask = app_view_icon_mask(HAL_GetTick());
+        return 1u;
+    }
 
     return 0u;
 }
@@ -744,7 +915,7 @@ static uint32_t app_flash_power_ok(void)
 
 static void app_battery_warning(uint32_t now_ms, uint32_t duration_ms)
 {
-    app_lcd_message("   ", now_ms, duration_ms);
+    app_lcd_message("bAt", now_ms, duration_ms);
     g_lcd_message_icons = TEMPLOGPRO_LCD_ICON_BATTERY | TEMPLOGPRO_LCD_ICON_X;
 }
 
@@ -756,6 +927,33 @@ static void app_execute_action(uint32_t now_ms)
     g_pending_action = APP_ACTION_NONE;
     g_action_next_step_ms = 0u;
     g_action_digit = 0u;
+
+    if ((action == APP_ACTION_CARD_ON) || (action == APP_ACTION_CARD_OFF)) {
+        g_app_state = g_action_return_state;
+        app_set_card_option(g_action_return_view, (action == APP_ACTION_CARD_ON) ? 1u : 0u, now_ms);
+        return;
+    }
+
+    if (action == APP_ACTION_OFF) {
+        /* Same as the panel's POWER OFF: on battery the device goes dark after
+           the "OFF" message, on USB it waits for the cable to be unplugged. */
+        g_app_state = g_action_return_state;
+        (void)templogpro_app_power_off_arm();
+        app_lcd_message("OFF", now_ms, 1200u);
+        app_update_lcd();
+        return;
+    }
+
+    if (action == APP_ACTION_POWER_ON) {
+        g_app_state = g_action_return_state;
+        g_off_active = 0u;
+        g_lcd_awake = 1u;
+        g_lcd_view = LCD_VIEW_TEMPERATURE;
+        g_last_user_activity_ms = now_ms;
+        app_lcd_message(app_state_text(), now_ms, 1500u);
+        app_update_lcd();
+        return;
+    }
 
     if (((action == APP_ACTION_START) || (action == APP_ACTION_CLEAR)) && (app_flash_power_ok() == 0u)) {
         g_app_state = g_action_return_state;
@@ -880,6 +1078,34 @@ static void app_update_lcd(void)
     char action_text[3];
     uint32_t action_icon_mask;
 
+    if ((g_off_active != 0u) && (g_action_active == 0u)) {
+        return;  /* LCD peripheral is off */
+    }
+
+    if (app_eco_dark() != 0u) {
+        if (g_lcd_hw_off == 0u) {
+            templogpro_hw_lcd_set_icon_mask(0u);
+            templogpro_hw_lcd_show_text3("   ");
+            templogpro_hw_lcd_suspend();
+            g_lcd_hw_off = 1u;
+        }
+        return;
+    }
+    if (g_lcd_hw_off != 0u) {
+        templogpro_hw_lcd_init();  /* a button (or USB) woke the display */
+        g_lcd_hw_off = 0u;
+    }
+
+    if ((g_lcd_awake == 0u) && (app_clock_mode_active() != 0u)) {
+        /* A plain clock face: TIME, the afternoon sun and, while logging, the
+           heart that blinks with the green LED at each measurement. */
+        templogpro_hw_lcd_set_icon_mask(TEMPLOGPRO_LCD_ICON_TIME |
+                                       ((app_local_hour() >= 12u) ? TEMPLOGPRO_LCD_ICON_SUN : 0u) |
+                                       ((app_measure_pulse_active(now_ms) != 0u) ? TEMPLOGPRO_LCD_ICON_HEART : 0u));
+        app_show_clock(1u);
+        return;
+    }
+
     if (g_lcd_awake == 0u) {
         templogpro_hw_lcd_set_icon_mask(app_idle_icon_mask(now_ms));
         templogpro_hw_lcd_show_text3("   ");
@@ -907,8 +1133,11 @@ static void app_update_lcd(void)
 
     if ((g_lcd_message_until_ms != 0u) &&
         ((int32_t)(now_ms - g_lcd_message_until_ms) < 0)) {
-        templogpro_hw_lcd_set_icon_mask(app_base_icon_mask(now_ms) |
-                                       ((((now_ms / 400u) & 1u) == 0u) ? g_lcd_message_icons : 0u));
+        /* A message with its own icons (battery warning, clock mode change) shows only
+           those, blinking - no check mark or alarm icons next to them. */
+        templogpro_hw_lcd_set_icon_mask((g_lcd_message_icons != 0u) ?
+                                       ((((now_ms / 400u) & 1u) == 0u) ? g_lcd_message_icons : 0u) :
+                                       app_base_icon_mask(now_ms));
         templogpro_hw_lcd_show_text3(g_lcd_message);
         return;
     }
@@ -986,7 +1215,7 @@ static void app_update_lcd(void)
     }
 
     if (g_lcd_view == LCD_VIEW_CLOCK) {
-        app_show_clock();
+        app_show_clock(0u);
         return;
     }
 
@@ -995,7 +1224,15 @@ static void app_update_lcd(void)
         return;
     }
 
+    if (g_lcd_view == LCD_VIEW_ECO) {
+        /* BATTERY + "Eco" alternating with On/OFF; hold START = on, hold STOP = off. */
+        templogpro_hw_lcd_show_text3((((now_ms / 1000u) & 1u) == 0u) ? "Eco" :
+                                     ((g_app_config.eco_mode != 0u) ? "On " : "OFF"));
+        return;
+    }
+
     if (g_lcd_view == LCD_VIEW_LEDS) {
+        /* SUN + PROBE + On/OFF: LEDs enabled; hold START = on, hold STOP = off. */
         templogpro_hw_lcd_show_text3(g_app_config.led_enable ? "On " : "OFF");
         return;
     }
@@ -1040,7 +1277,7 @@ static void app_update_lcd(void)
 
 static void app_update_leds(uint32_t now_ms)
 {
-    if (g_app_config.led_enable == 0u) {
+    if ((g_app_config.led_enable == 0u) || (g_off_active != 0u) || (app_eco_dark() != 0u)) {
         templogpro_hw_led_green_off();
         templogpro_hw_led_red_off();
         return;
@@ -1165,22 +1402,39 @@ static void app_reset_logger(uint32_t now_ms)
     app_update_lcd();
 }
 
-static void app_toggle_leds(uint32_t now_ms)
+static uint32_t app_is_option_card(LcdView view)
+{
+    /* The clock card toggles clock mode (the idle display shows the time). */
+    return ((view == LCD_VIEW_CLOCK) || (view == LCD_VIEW_LEDS) || (view == LCD_VIEW_ECO)) ? 1u : 0u;
+}
+
+/* Clock mode / LED cards: hold START = on, hold STOP = off (after the countdown).
+   Saving the config erases a Winbond sector, so on a weak battery it is refused
+   like CLR/START. */
+static void app_set_card_option(LcdView view, uint32_t enable, uint32_t now_ms)
 {
     TempLogProConfig next_config = g_app_config;
+    uint32_t *option = (view == LCD_VIEW_LEDS) ? &next_config.led_enable :
+                       (view == LCD_VIEW_ECO) ? &next_config.eco_mode : &next_config.clock_mode;
 
-    next_config.led_enable = (next_config.led_enable == 0u) ? 1u : 0u;
-    if (templogpro_config_set(&next_config) == 0u) {
-        g_app_state = TEMPLOGPRO_STATE_ERROR;
-        app_lcd_message("Err", now_ms, 1200u);
-        app_update_lcd();
-        return;
+    g_lcd_view = view;
+    if (*option != enable) {
+        if (app_flash_power_ok() == 0u) {
+            app_battery_warning(now_ms, 3000u);
+            app_update_lcd();
+            return;
+        }
+        *option = enable;
+        if (templogpro_config_set(&next_config) == 0u) {
+            app_lcd_message("Err", now_ms, 1200u);
+            app_update_lcd();
+            return;
+        }
+        g_app_config = next_config;
+        g_app_config_generation = templogpro_config_generation();
     }
-
-    g_app_config = next_config;
-    g_app_config_generation = templogpro_config_generation();
-    g_lcd_view = LCD_VIEW_LEDS;
-    g_lcd_message_until_ms = 0u;
+    app_lcd_message((enable != 0u) ? "On " : "OFF", now_ms, 900u);
+    g_lcd_message_icons = app_view_icon_mask(now_ms);  /* the card's icons blink to confirm */
     app_update_leds(now_ms);
     app_update_lcd();
 }
@@ -1189,7 +1443,7 @@ static void app_apply_lcd_timeout(uint32_t now_ms)
 {
     uint32_t usb_active = app_usb_active();
 
-    if (g_action_active != 0u) {
+    if ((g_action_active != 0u) || (g_off_active != 0u)) {
         return;
     }
 
@@ -1256,7 +1510,7 @@ static uint32_t app_local_hour(void)
     return (app_local_datetime(&local) != 0u) ? local.hour : 0u;
 }
 
-static void app_show_clock(void)
+static void app_show_clock(uint32_t steady_colon)
 {
     TempLogProDateTime now;
     uint32_t hour;
@@ -1269,7 +1523,8 @@ static void app_show_clock(void)
     if (hour == 0u) {
         hour = 12u;
     }
-    templogpro_hw_lcd_show_clock12(hour, now.minute, ((now.second & 1u) == 0u) ? 1u : 0u);
+    templogpro_hw_lcd_show_clock12(hour, now.minute,
+                                  ((steady_colon != 0u) || ((now.second & 1u) == 0u)) ? 1u : 0u);
 }
 
 static uint32_t app_base_icon_mask(uint32_t now_ms)
@@ -1342,7 +1597,9 @@ static uint32_t app_view_icon_mask(uint32_t now_ms)
         /* The sun marks afternoon/evening (12:00-23:59) on the 12-hour clock. */
         return TEMPLOGPRO_LCD_ICON_TIME | ((app_local_hour() >= 12u) ? TEMPLOGPRO_LCD_ICON_SUN : 0u);
     case LCD_VIEW_LEDS:
-        return TEMPLOGPRO_LCD_ICON_SUN;
+        return TEMPLOGPRO_LCD_ICON_SUN | TEMPLOGPRO_LCD_ICON_PROBE;
+    case LCD_VIEW_ECO:
+        return TEMPLOGPRO_LCD_ICON_BATTERY;
     default:
         return 0u;
     }

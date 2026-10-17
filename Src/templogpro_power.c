@@ -231,10 +231,11 @@ uint32_t templogpro_power_enter_stop(void)
         g_stop_deferred = power_add_u32(g_stop_deferred, 1u);
         return 0u;
     }
-    if ((wake_s == 0u) || (wake_s > TEMPLOGPRO_STOP_WAKE_MAX_S)) {
+    /* 0 = OFF (storage): no RTC tick at all, only buttons or the USB cable wake the MCU. */
+    if (wake_s > TEMPLOGPRO_STOP_WAKE_MAX_S) {
         wake_s = 1u;
     }
-    if (power_rtc_wakeup_start(wake_s) == 0u) {
+    if ((wake_s != 0u) && (power_rtc_wakeup_start(wake_s) == 0u)) {
         g_stop_deferred = power_add_u32(g_stop_deferred, 1u);
         return 0u;
     }

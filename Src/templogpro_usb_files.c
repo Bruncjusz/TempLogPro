@@ -422,6 +422,10 @@ static void html_config_block_build(char *buf, uint32_t len)
     pos = append_u32(buf, pos, len, config.led_enable);
     pos = append_str(buf, pos, len, ",\"unit\":");
     pos = append_u32(buf, pos, len, config.temperature_unit);
+    pos = append_str(buf, pos, len, ",\"ecoMode\":");
+    pos = append_u32(buf, pos, len, config.eco_mode);
+    pos = append_str(buf, pos, len, ",\"clockMode\":");
+    pos = append_u32(buf, pos, len, config.clock_mode);
     pos = append_str(buf, pos, len, ",\"reset\":\"");
     pos = append_str(buf, pos, len, templogpro_diag_reset_cause());
     pos = append_str(buf, pos, len, "\",\"tzName\":\"");

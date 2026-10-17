@@ -81,7 +81,9 @@ cyfrze. Polecenia z panelu przerywają lokalne odliczanie.
 | Nr bitu | Ekran | Ikony |
 | --- | --- | --- |
 | 0 | temperatura (zawsze dostępny; na USB napis `USB`) | TEMP, °C/°F |
-| 12 | zegar 12 h `H:MM` (czas lokalny strefy, dwukropek miga) | TIME, SUN po południu (12:00–23:59) |
+| 15 | diody LED: `On` / `OFF`; obsługa jak na karcie 12 (zapis `led_enable`) | SUN, PROBE |
+| 16 | tryb eco: na zmianę `Eco` i `On` / `OFF`; obsługa jak na karcie 12 (zapis `eco_mode`) | BATTERY |
+| 12 | zegar 12 h `H:MM` (czas lokalny strefy, dwukropek miga); przytrzymanie START włącza, STOP wyłącza tryb zegarka (odliczanie `On5…On0` / `OF5…OF0`, zapis `clock_mode`; na baterii < 2,7 V odmowa) | TIME, SUN po południu (12:00–23:59) |
 | 1 | stan loggera (`rdY` / `run` / `StP`) | PROBE |
 | 4 | średnia | TEMP + AVG |
 | 3 | maksimum | TEMP + MAX |
@@ -91,10 +93,10 @@ cyfrze. Polecenia z panelu przerywają lokalne odliczanie.
 | 7 | czas pracy | klepsydra + jednostka |
 | 8 | liczba zapisów | PROBE |
 | 9 | interwał (sekundy) | PROBE + TIME |
-| 10 | bateria (na USB `USB`) | bateria + % |
+| 10 | bateria (na USB `USB`); oba przyciski 3 s → OFF (przechowywanie) | bateria + % |
 | 11 | kasowanie (CLR) | — |
 
-Widoczność ekranów ustawia się w panelu (`lcd_menu_mask`, 13 bitów; konfiguracje sprzed v7 dostają zegar włączony). Po 10 s bez
+Widoczność ekranów ustawia się w panelu (`lcd_menu_mask`, 17 bitów; konfiguracje sprzed v7 dostają zegar, sprzed v8 kartę OFF, sprzed v9 kartę trybu zegarka, sprzed v10 kartę diod, sprzed v11 kartę eco). Po 10 s bez
 dotykania ekran wraca do temperatury; na baterii cyfry gasną, zostają ikony
 stanu. Temperatura na LCD może być w °C albo °F (dane w pamięci zawsze w °C).
 
@@ -180,8 +182,8 @@ lub spadek napięcia), `RESET_PIN` (NRST / programator), `SOFTWARE`, `WATCHDOG`,
 przez CLR/START). Przed kasowaniem firmware zapisuje znacznik w rejestrze
 zapasowym RTC (`RTC_BKP2R` = `0x5A5A00xx`), a po skończonej operacji go zeruje;
 znacznik zastany przy starcie oznacza przerwaną operację. Na baterii CLR/START
-są odrzucane poniżej 2,7 V (minimum Winbond W25X40): przez 3 s migają ikony
-baterii i X. Po wykrytej przerwanej operacji ikona baterii miga 5 s po starcie.
+są odrzucane poniżej 2,7 V (minimum Winbond W25X40): przez 3 s napis `bAt`
+i migające ikony baterii i X (bez ptaszka i innych ikon). Po wykrytej przerwanej operacji ikona baterii miga 5 s po starcie.
 Pełny zanik zasilania (wyjęta bateria) zeruje rejestry zapasowe, więc wtedy
 raport pokaże zwykłe `POWER_ON`.
 
@@ -205,7 +207,7 @@ szeregowy „USB Serial Device (COMx)”.
 
 ## 6. Konfiguracja
 
-Format v7 (96 B, układ jak v6), dwie kopie w Winbond (A `0x7F000`, B `0x00000`), wygrywa
+Format v11 (96 B, układ jak v6; bajt 60 `clock_mode`, 61 `eco_mode`, 51 bity 16+ maski menu), dwie kopie w Winbond (A `0x7F000`, B `0x00000`), wygrywa
 poprawna kopia z wyższym numerem `generation`. Zapis zawsze nadpisuje kopię
 nieaktualną, więc przerwany zapis zostawia poprzednie ustawienia.
 
@@ -216,8 +218,10 @@ nieaktualną, więc przerwany zapis zostawia poprzednie ustawienia.
 | `battery_mode` | 0/1 | oszczędzanie energii na baterii |
 | `usb_logging` | 0/1 | 1 = pomiary także na USB, 0 = USB tylko do raportów (START odmawia `E007`) |
 | `lcd_mode` | 0–12 | ekran po starcie |
-| `lcd_menu_mask` | 0–8191 | widoczne ekrany (bit 0 zawsze, bit 12 = zegar) |
+| `lcd_menu_mask` | 0–131071 | widoczne ekrany (bit 0 zawsze, bit 12 = zegar, 13 = OFF, 14 = tryb zegarka, 15 = diody, 16 = eco; bity 13 i 14 nieużywane - dawne karty OFF i trybu zegarka) |
+| `eco_mode` | 0/1 | tryb eco: na baterii po 10 s bezczynności LCD całkiem wyłączone, bez serca i diod; budzenie tylko na pomiar |
 | `led_enable` | 0/1 | diody |
+| `clock_mode` | 0/1 | tryb zegarka: zatrzymany logger na baterii pokazuje H:MM (bajt 60 konfiguracji; starsze zapisy mają tam 0) |
 | `temperature_unit` | C/F | jednostka na LCD |
 | `pdf_enable` | 0/1 | pole historyczne |
 | `tz_name` | do 31 znaków | strefa IANA do raportu, np. `Europe/Warsaw` |
@@ -268,6 +272,8 @@ GET TIME                  -> TIME utc=YYYY-MM-DD HH:MM:SS local=YYYY-MM-DD HH:MM
 LOGGER STATUS             -> LOGGER STATUS app=RUN logger=LOGGING records=... capacity=... interval=... min=... max=... avg=...
 LOGGER START | LOGGER PAUSE
 LOGGER CLEAR CONFIRM      (samo LOGGER CLEAR jest odrzucane, E006)
+POWER OFF                 -> OK POWER OFF (zatrzymuje zapis; OFF po odłączeniu USB; LOGGER STATUS dopisuje off=ARMED)
+POWER OFF CANCEL          -> OK POWER OFF CANCEL
 SET TIME YYYY-MM-DD HH:MM:SS
 CONFIG BEGIN / key=value ... / CONFIG END   -> OK CONFIG
 ```
@@ -312,7 +318,30 @@ przyciski i podłączenie kabla USB (przerwanie na D+) budzą od razu;
 wyświetlacz odświeżany ~75 Hz zamiast ~300 Hz; Winbond w deep
 power-down (`B9h`) i bramkowany SPI, ADC tylko na czas odczytu, czujnik
 w shutdown/one-shot, harmonogram pomiarów trzymający siatkę od START,
-heartbeat skrócony na baterii. Notatki: `docs/battery_*.md`,
+heartbeat skrócony na baterii.
+
+**Tryb zegarka** (`clock_mode=1`): na baterii wygaszony ekran pokazuje `H:MM`
+ze stałym dwukropkiem i ikonami TIME/SUN (bez X, STOP, ptaszka). Zatrzymany
+logger budzi się z RTC dokładnie na pełną minutę (`60 − sekunda`); podczas
+zapisu zegar odświeża się przy zwykłym budzeniu co 1 s, a serce miga z diodą.
+
+**Tryb eco** (`eco_mode=1`): na baterii, gdy ekran zasypia (10 s bez przycisków),
+kontroler LCD jest wyłączany (`LCD_CR = 0`), serce i obie diody są wygaszone,
+a w RUN timer RTC budzi procesor dopiero na następny pomiar
+(`next_measurement − teraz`, maks. 60 s) zamiast co 1 s; zatrzymany logger co
+60 s. Przycisk włącza LCD z powrotem (`templogpro_hw_lcd_init`). Eco ma
+pierwszeństwo przed trybem zegarka; przy USB jest nieaktywne.
+
+**OFF (przechowywanie)**: `POWER OFF` przez USB albo ekran baterii na LCD
+(oba przyciski, odliczanie `o 5…o 0`, napis `OFF` przez 1,2 s) uzbraja tryb, po odłączeniu
+kabla firmware zatrzymuje ewentualny zapis, gasi diody, wyłącza kontroler
+LCD (`LCD_CR = 0`, także przetwornica) i wchodzi w STOP **bez timera RTC**
+(`templogpro_app_stop_wake_seconds() == 0`). Budzą tylko przyciski (EXTI0/1)
+i kabel USB. Oba przyciski przez 3 s (odliczanie 3-2-1) albo USB kończą OFF;
+wcześniejsze puszczenie wraca do OFF. RTC liczy dalej. Stan OFF jest
+w RAM — reset (np. wymiana baterii) uruchamia urządzenie normalnie.
+
+Notatki: `docs/battery_*.md`,
 `docs/usb_idle_optimization_2026-09-19.md`.
 
 ---

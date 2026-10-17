@@ -19,6 +19,7 @@ Urządzenie ma segmentowy wyświetlacz i dwa przyciski: **START** i **STOP**.
 | przytrzymaj **START** 3 s | rozpoczęcie albo wznowienie zapisu |
 | przytrzymaj **STOP** 3 s | pauza zapisu |
 | na ekranie **CLR** przytrzymaj **oba** przyciski 3 s | wyczyszczenie pamięci pomiarów |
+| na ekranie **Bateria** przytrzymaj **oba** przyciski 3 s | wyłączenie do przechowywania (OFF) |
 
 Po przytrzymaniu przez 3 s na wyświetlaczu pojawia się odliczanie od 5 do 0
 (`r 5…r 0` przy starcie, `S 5…S 0` przy pauzie, `C 5…C 0` przy czyszczeniu).
@@ -29,24 +30,76 @@ Po 10 sekundach bez naciskania wyświetlacz wraca do ekranu temperatury. Na
 baterii cyfry gasną, żeby oszczędzać energię; zostają ikony stanu. Naciśnij
 dowolny przycisk, aby je przywrócić.
 
+### Tryb zegarka
+
+Gdy w Ustawieniach włączysz **Tryb zegarka (zamiast pustego ekranu)**, na baterii
+ekran zamiast gasnąć pokazuje godzinę w formacie 12 h, np. `2:37`, z ikoną TIME
+i słońcem po południu — przy zatrzymanym loggerze i podczas zapisu. Dwukropek
+świeci na stałe. Podczas zapisu przy każdym pomiarze mignie serce (razem
+z zieloną diodą). Przy zatrzymanym loggerze urządzenie budzi się tylko na
+pełną minutę, więc pobór rośnie o kilka µA. Przyciski działają jak zwykle,
+a po 10 s bezczynności wraca zegar. Przy USB ekran działa jak bez tej opcji.
+
+### Tryb eco
+
+Tryb eco (panel: Ustawienia → Zasilanie, albo ekran **Eco** na LCD) daje
+najniższy pobór przy normalnej pracy loggera. Na baterii, po 10 s bez
+naciskania przycisków, wyświetlacz wyłącza się całkowicie (bez ikon i zegara),
+nie miga serce ani diody — także czerwona dioda alarmu. Pomiary i zapis
+działają normalnie, a procesor budzi się tylko na kolejny pomiar (przy
+zatrzymanym loggerze raz na minutę). Naciśnięcie dowolnego przycisku włącza
+ekran jak zwykle. Alarmy są zapisywane w logu i widać je po włączeniu ekranu
+oraz w raporcie. Tryb eco ma pierwszeństwo przed trybem zegarka; przy USB
+nie działa.
+
+### Wyłączenie do przechowywania (OFF)
+
+Na czas przechowywania urządzenie można całkowicie wygasić:
+
+- **Z wyświetlacza:** przejdź do ekranu **Bateria** i przytrzymaj oba
+  przyciski — odliczanie `o 5…o 0`, potem napis `OFF` i urządzenie gaśnie.
+  Przy podłączonym USB zgaśnie dopiero po odłączeniu kabla.
+- **Z panelu:** podłącz USB, otwórz `TempLogPro.html` → **Ustawienia** →
+  **Połącz z urządzeniem** → **Wyłącz (OFF)** i potwierdź, potem odłącz USB.
+
+Jeśli trwał zapis, logger zostanie zatrzymany (zdarzenie STOP w logu). Po
+wyłączeniu ekran i diody są zgaszone, a pomiary nie są wykonywane.
+
+**Włączenie:** przytrzymaj **oba przyciski** — pojawi się odliczanie `3`, `2`, `1`,
+a potem stan loggera (`rdY` albo `StP`). Puszczenie przycisków wcześniej
+zostawia urządzenie wyłączone. Podłączenie USB też je włącza.
+Zegar chodzi dalej w tle, więc po włączeniu godzina jest prawidłowa.
+
 ### Ekrany
 
 Kolejność na urządzeniu (niektóre można ukryć w ustawieniach):
 
 1. **Temperatura** — ostatni pomiar (po podłączeniu USB napis `USB`)
 2. **Zegar** — godzina w formacie 12 h, np. `9:41` (ikona TIME, dwukropek miga co sekundę;
-   ikona słońca świeci od 12:00 do 23:59, czyli po południu)
-3. **Stan** — `rdY` gotowy, `run` zapis trwa, `StP` pauza
-4. **Średnia** (ikona AVG)
-5. **Maksimum** (MAX)
-6. **Próg górny** (PROBE + MAX)
-7. **Minimum** (MIN)
-8. **Próg dolny** (PROBE + MIN)
-9. **Czas pracy** (klepsydra + jednostka: sekundy, minuty, godziny, dni)
-10. **Liczba zapisów** (PROBE)
-11. **Interwał pomiaru** w sekundach (PROBE + TIME)
-12. **Bateria** w procentach (szacunkowo; przy USB napis `USB`)
-13. **CLR** — czyszczenie pamięci
+   ikona słońca świeci od 12:00 do 23:59, czyli po południu). Tu włączasz i wyłączasz
+   **tryb zegarka** (zegar zamiast pustego ekranu).
+3. **Diody LED** — ikony słońca i PROBE oraz `On` albo `OFF`: czy diody świecą.
+4. **Tryb eco** — ikona baterii, na zmianę `Eco` i `On` / `OFF`.
+
+   Na tych trzech ekranach przytrzymaj **START**, aby włączyć, albo **STOP**, aby
+   wyłączyć: pojawi się odliczanie `On5…On0` / `OF5…OF0`, a puszczenie
+   przycisku wcześniej anuluje zmianę; po zmianie przez chwilę widać `On` / `OFF`.
+   Zapis loggera nie jest wtedy ruszany. Te same ustawienia są w panelu.
+5. **Stan** — `rdY` gotowy, `run` zapis trwa, `StP` pauza
+6. **Średnia** (ikona AVG)
+7. **Maksimum** (MAX)
+8. **Próg górny** (PROBE + MAX)
+9. **Minimum** (MIN)
+10. **Próg dolny** (PROBE + MIN)
+11. **Czas pracy** (klepsydra + jednostka: sekundy, minuty, godziny, dni)
+12. **Liczba zapisów** (PROBE)
+13. **Interwał pomiaru** w sekundach (PROBE + TIME)
+14. **Bateria** w procentach (szacunkowo; przy USB napis `USB`); przytrzymanie
+    obu przycisków 3 s wyłącza urządzenie do przechowywania (OFF)
+15. **CLR** — czyszczenie pamięci
+
+Przycisk **STOP** przewija ekrany w tej kolejności, **START** w odwrotnej
+(Temperatura → CLR → Bateria → …).
 
 ### Znaczki i diody
 
@@ -93,6 +146,7 @@ wewnętrzny zegar może się z czasem spieszyć lub spóźniać.
 | Jednostka temperatury | °C lub °F na wyświetlaczu (raport ma osobny przełącznik) |
 | Ekran po starcie | który ekran pokazać po włączeniu |
 | Diody LED | włączone / wyłączone (wyłączenie oszczędza baterię) |
+| Tryb zegarka (zamiast pustego ekranu) | włączony: na baterii wygaszony ekran pokazuje godzinę (także podczas zapisu) |
 | Strefa czasowa | strefa, w której pokazywany jest czas (np. Europe/Warsaw) |
 | Zmiana czasu | automatycznie wg strefy, ręcznie (własne dni przejścia na czas letni i zimowy) albo bez zmiany |
 | Data i godzina | ręczne ustawienie zegara w czasie lokalnym wybranej strefy |
@@ -206,7 +260,7 @@ ekran **CLR** i oba przyciski przez 3 s. Przed czyszczeniem zapisz raport lub
   (zależnie od ustawienia „Praca na zasilaniu USB”).
 - Ekran **Bateria** pokazuje przybliżony stan na podstawie napięcia.
 - Przed **CLR** i **START** na baterii urządzenie sprawdza napięcie. Poniżej
-  2,7 V odmawia: przez 3 s migają ikona baterii i X, a stan się nie zmienia —
+  2,7 V odmawia: przez 3 s na ekranie jest `bAt` i migają ikona baterii i X, a stan się nie zmienia —
   kasowanie pamięci przy słabej baterii mogłoby zrestartować urządzenie.
   Wymień baterię albo podłącz USB.
 - Jeśli mimo to bateria „siądzie” w trakcie CLR/START, po ponownym starcie
@@ -231,7 +285,8 @@ ekran **CLR** i oba przyciski przez 3 s. Przed czyszczeniem zapisz raport lub
 | Zmiana czasu w złym dniu | Ustawienia → Zmiana czasu: **Ręcznie** i ustaw dni przejścia |
 | Krzyżyk miga, choć temperatura jest dobra | to pamiątka po wcześniejszym przekroczeniu; zniknie po wyczyszczeniu pamięci |
 | Windows pokazuje starą nazwę pliku | odłącz i podłącz USB |
-| Po CLR/START migają bateria i X, nic się nie dzieje | za słaba bateria (poniżej 2,7 V) — wymień ją lub podłącz USB |
+| Po CLR/START napis `bAt`, migają bateria i X, nic się nie dzieje | za słaba bateria (poniżej 2,7 V) — wymień ją lub podłącz USB |
+| Ekran całkiem pusty, przyciski nie reagują | urządzenie jest w trybie OFF — przytrzymaj oba przyciski 3 s albo podłącz USB |
 | Urządzenie samo się zrestartowało | sprawdź Informacje → Ostatni restart albo `LAST_RESET` w `POWER.TXT` |
 
 ---

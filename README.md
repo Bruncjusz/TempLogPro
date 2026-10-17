@@ -13,15 +13,18 @@ offline — z wykresem, analizą przekroczeń, eksportem do PDF i ustawieniami
 urządzenia przez Web Serial.
 
 Autor: **Brunon Kucharski** · opracowane we współpracy z **Codex (OpenAI)** i **Claude (Anthropic)**
-Wersja firmware: **1.1.0** · licencja **MIT**
+Wersja firmware: **1.1.0** · licencja **MIT**  
+_Gałąź main zawiera już funkcje przygotowywane do następnego wydania (tryb zegarka, eco, OFF); gotowe wydania są w zakładce Releases._
 
 ## Funkcje
 
 - pomiar co 1–600 s, do **42 284 wpisów** w pamięci Winbond, zapis odporny na reset i utratę zasilania;
 - dwa progi alarmu, wykrywanie przekroczeń i powrotu do zakresu;
-- oryginalny LCD: 13 konfigurowalnych ekranów (w tym zegar 12 h), °C/°F, serce i zielona dioda jako heartbeat, X i czerwona dioda przy alarmie;
+- oryginalny LCD: 15 konfigurowalnych ekranów (w tym zegar 12 h z trybem zegarka, diody, eco; OFF z ekranu baterii), °C/°F, serce i zielona dioda jako heartbeat, X i czerwona dioda przy alarmie;
 - przyciski START/STOP z odliczaniem i anulowaniem, kasowanie logu z menu;
-- tryb STOP na baterii (~16 µA w spoczynku); ochrona CLR/START przy słabej baterii
+- tryb STOP na baterii (~16 µA w spoczynku), tryb eco (ekran i diody całkiem wygaszone,
+  budzenie tylko na pomiar), tryb zegarka dla zatrzymanego loggera
+  i wyłączenie do przechowywania (OFF, włączenie obu przyciskami); ochrona CLR/START przy słabej baterii
   (poniżej 2,7 V) i zapis przyczyny ostatniego restartu;
 - USB: dysk `TEMPLOGPRO` z plikami `TempLogPro.html`, `DATA.CSV`, `README.TXT`, `POWER.TXT` oraz port szeregowy do konfiguracji;
 - raport HTML offline (Chrome/Edge): werdykt, kafelki, wykres z zakresami i strefami „brak danych”, tabele, filtr pomiarów, CSV, PL/EN, motyw jasny/ciemny;

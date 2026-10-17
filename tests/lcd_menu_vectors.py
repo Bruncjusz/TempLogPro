@@ -102,8 +102,10 @@ d.uc.mem_write(symbols['g_app_config'] + 36, struct.pack('<I', 0))
 check(d.show(0) == ('temperature', 29 * 256) and d.mask & CELSIUS and not d.mask & FAHRENHEIT)
 
 # Menu order: temperature, clock, state, AVG, then each measured extreme beside its threshold.
-sequence = tuple(d.uc.mem_read(symbols['LCD_MENU_SEQUENCE'], 13))  # arm-none-eabi: 1-byte enums
-check(sequence == (0, 12, 1, 4, 3, 6, 2, 5, 7, 8, 9, 10, 11))
+sequence = tuple(d.uc.mem_read(symbols['LCD_MENU_SEQUENCE'], 15))  # arm-none-eabi: 1-byte enums
+check(sequence == (0, 12, 15, 16, 1, 4, 3, 6, 2, 5, 7, 8, 9, 10, 11))
+# LED card: SUN + PROBE + On/OFF from led_enable (config() sets LEDs off).
+check(d.show(15) == ('text', b'OFF') and d.mask & 0x00200100 == 0x00200100)
 check(d.show(8) == ('value', 999) and d.mask & BIG)
 check(d.show(7) == ('value', 45) and d.mask & 0x4000)
 check(d.show(10) == ('value', 80) and d.mask & 0x2004 == 0x2004)

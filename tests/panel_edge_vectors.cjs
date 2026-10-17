@@ -80,7 +80,7 @@ for (const width of [1440, 480]) {
   check(r.unit === '1' && r.reportUnit === 'F', 'device unit F drives the field and the report');
   check(r.payload.includes('temperature_unit=F\n') && r.payload.includes('lcd_menu_mask=3839\n'), 'payload');
   check(r.intervalMax === '600', 'interval limit');
-  check(JSON.stringify(r.menuOrder) === '[0,12,1,4,3,6,2,5,7,8,9,10,11]', 'menu checkboxes in device order (clock after temperature)');
+  check(JSON.stringify(r.menuOrder) === '[0,12,15,16,1,4,3,6,2,5,7,8,9,10,11]', 'menu checkboxes in device order (clock after temperature)');
   check(JSON.stringify(r.startOrder) === '[0,12,1,4,3,6,2,5,7,8,9,10,11]', 'start screen options in device order');
   check(r.menuChecked === 11 && r.homeLocked, 'menu mask applied, home screen locked');
   check(r.rows === 4 && r.badRecords === 1, 'skipped E001 slot hidden from the table and counted');

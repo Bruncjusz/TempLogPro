@@ -8,7 +8,7 @@
 #define TEMPLOGPRO_CONFIG_STATUS_ERROR       3u
 
 #define TEMPLOGPRO_CONFIG_TEXT_SIZE          512u
-#define TEMPLOGPRO_LCD_MENU_ALL              0x1FFFu  /* cards 0-12 (12 = clock) */
+#define TEMPLOGPRO_LCD_MENU_ALL              0x1FFFFu /* cards 0-16 (12 clock, 13 OFF, 14 clock mode, 15 LEDs, 16 eco) */
 /* The LCD shows the interval as plain seconds on three digits. */
 #define TEMPLOGPRO_CONFIG_MAX_INTERVAL_S     600u
 
@@ -44,6 +44,8 @@ typedef struct
     TempLogProDstRule tz_dst_start;       /* local standard time */
     TempLogProDstRule tz_dst_end;         /* local daylight time */
     char tz_name[TEMPLOGPRO_TZ_NAME_SIZE]; /* IANA name for the report, e.g. Europe/Warsaw */
+    uint32_t clock_mode;                  /* 1: stopped logger on battery shows the clock */
+    uint32_t eco_mode;                    /* 1: on battery the idle LCD, heart and LEDs go fully off */
 } TempLogProConfig;
 
 uint32_t templogpro_config_init(void);

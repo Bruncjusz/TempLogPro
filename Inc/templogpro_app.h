@@ -33,5 +33,10 @@ TempLogProState templogpro_app_get_state(void);
 uint32_t templogpro_app_should_idle_sleep(void);
 uint32_t templogpro_app_should_stop_sleep(void);
 uint32_t templogpro_app_stop_wake_seconds(void);
+/* OFF (storage) mode: armed over USB, entered when the cable is unplugged,
+   left by holding both buttons for 3 s or by plugging USB in again. */
+uint32_t templogpro_app_power_off_arm(void);
+void templogpro_app_power_off_cancel(void);
+uint32_t templogpro_app_power_off_armed(void);
 
 #endif

@@ -414,6 +414,55 @@ i sprawdzony testem `lcd_segment_map_vectors.py` na obrazie.
   `99e35b9233aae0ff6bc3db730d564a3d9a8769c915e3b6bf2108e8fff13c71e9`
   (także `firmware/TempLogPro.bin|hex`). GitHub: tag `v1.1.0` + Release.
 
+- 2026-10-15 (po 1.1.0, niewydane): **tryb zegarka** (`clock_mode`, bajt 60 konfiguracji,
+  JSON `clockMode`; zatrzymany logger na baterii pokazuje H:MM ze stałym dwukropkiem,
+  budzenie RTC na pełną minutę) i **OFF** (`POWER OFF` / `POWER OFF CANCEL` przez CDC,
+  `off=ARMED` w LOGGER STATUS; po odłączeniu USB: LCD_CR=0, diody off, STOP bez timera RTC
+  - `stop_wake_seconds()==0`; oba przyciski 3 s z odliczaniem 3-2-1 albo USB kończą OFF).
+  Panel: pole 'Tryb zegarka', przycisk 'Wyłącz (OFF)' z potwierdzeniem. Test
+  `tests/clock_off_vectors.py` (32 sprawdzenia). Wgrane: bin
+  `8ded9e44…`; użytkownik potwierdził działanie. Poprawka: zegar bez ikon X/STOP/ptaszka
+  (tylko TIME + słońce). Wgrane: bin
+  `c34451eb529de60471786dbb7bbaad3c8366a7d151512cb4ebca271ca57def26`.
+  Potem: tryb zegarka także w RUN (serce z diodą przy pomiarze), karta LCD `OFF` (widok 13,
+  LEDS/ICON_SCAN -> 14/15, maska 14 bitów 0x3FFF, konfiguracja v8 - starsze dostają bit 13;
+  oba przyciski, odliczanie o 5..o 0, napis OFF 1,2 s, potem OFF; na USB po odłączeniu).
+  Zbudowane: bin `d6d4eb5b89ac6284a7d15cef195b2b97ebb7027c755436a093eb953abeaaf319` -
+  wgrane po poprawieniu przewodów SWD; konfiguracja zmigrowana do v8 (lcd_menu_mask=16383,
+  clock_mode=1 zachowane), logger RUN z 12881 wpisami bez strat.
+  Kolejność: OFF przed CLR w LCD_MENU_SEQUENCE (użytkownik przewija STARTEM, wstecz:
+  Temperatura -> CLR -> OFF), panel tak samo. Zbudowane (czeka na wgranie, ST-Link bez połączenia): bin
+  `565df2f3d42acbba31066bbe89f13a7bc90364ea4aca859beece5cc7f4827d9f`.
+  Następnie karta LCD **tryb zegarka** (widok 14: TIME + On/OFF z `clock_mode`, tylko podgląd;
+  w menu zaraz za zegarem; LEDS/ICON_SCAN -> 15/16; maska 15 bitów 0x7FFF; konfiguracja v9 -
+  starsze dostają bit 14). Wgrane: bin
+  `18f2f33f7c8c856ec34303a1dd5e919acaf6c4f5bdcd20a3f54d8cd99deb3c30` (zawiera też kolejność OFF/CLR).
+  Potem: na karcie trybu zegarka przytrzymanie START = zegar on, STOP = off (zapis konfiguracji,
+  odmowa na baterii < 2,7 V; bez ruszania loggera). Zbudowane, NIEWGRANE (ST-Link: brak rdzenia -
+  urządzenie w STOP bez USB, a NRST chyba bez kontaktu): bin
+  `9af2f626034f8d42a4295b3c14b60f1a35f79bb5276e10bad5174266d7471d0a`.
+  Potem: ostrzeżenie baterii jako napis `bAt` + migające tylko BATTERY i X (komunikat z własnymi
+  ikonami nie dokłada ikon bazowych, więc nie ma ptaszka obok X). Zbudowane, niewgrane
+  (ST-Link odłączony): bin `334269686d00160145a20f1f8d4494c4ab26b3e488cf90432959d894f4de9523`.
+  Potem: karta LCD **diody LED** (widok 15: SUN+PROBE+On/OFF, w menu za kartą trybu zegarka;
+  maska 16 bitów 0xFFFF, konfiguracja v10 - starsze dostają bit 15); karty trybu zegarka i diod:
+  przytrzymanie START/STOP z odliczaniem On5..On0 / OF5..OF0 (APP_ACTION_CARD_ON/OFF), anulowanie
+  zostaje na karcie (poprawka: anulowanie z kart > 12, także OFF, wracało do temperatury).
+  Wgrane: bin `043faf0a7b66850baec3e47a19f41c21541a458dc6e223ce25df7a007f61a0ca`.
+  Potem: **tryb eco** (`eco_mode`, bajt 61; JSON `ecoMode`; panel Zasilanie + karta LCD 16:
+  BATTERY, na zmianę Eco i On/OFF, START/STOP z odliczaniem). Na baterii po zaśnięciu ekranu:
+  LCD_CR=0, bez serca i diod (także alarmu), w RUN budzenie RTC na następny pomiar (maks. 60 s),
+  zatrzymany co 60 s; przycisk/USB włącza LCD (`g_lcd_hw_off`). Eco wygrywa z trybem zegarka.
+  Maska menu 17 bitów 0x1FFFF - bity 16+ w bajcie 51 (wolny bajt reguły DST), konfiguracja v11.
+  `clock_mode` teraz bajt 60 (u8). Zbudowane, NIEWGRANE (ST-Link bez rdzenia): bin
+  `553a9eefebd0d6b63a865f98e4a9794d9d03926cbbc18193b2225e32c1c85b45`.
+  Potem: tryb zegarka przełączany na karcie zegara (START/STOP z odliczaniem), osobna karta 14
+  usunięta z menu (bit 14 maski nieużywany, panel bez checkboxa). Zbudowane, niewgrane: bin
+  `95f1deba2e1e876d75526e08faf29df489e1f224a97197d44679edeb0ac3608b`.
+  Potem: OFF przeniesiony na kartę baterii (oba przyciski 3 s), karta OFF usunięta z menu
+  (bit 13 nieużywany). Zbudowane, niewgrane: bin
+  `2f2a57d36e2a651be5dddd5e5e49fb4c7c23de993fa281d4e39ff0bebdd9b4df`.
+
 ## Znane błędy, nienaprawione
 
 - Brak.

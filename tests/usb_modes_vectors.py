@@ -175,7 +175,7 @@ for version in (1,2,3,4):
         check(cfg[0:4]==(10,24*256,32*256,1))
         check(cfg[-2]==(mode if version>=3 else 1))
         # Older configurations gain the clock card (bit 12) added in config v7.
-        check(cfg[-1]==((5 | 4096) if version==4 else 8191))
+        check(cfg[-1]==((5 | 4096 | 8192 | 16384 | 32768 | 65536) if version==4 else 131071))
         check(d.flash_writes==0)
         check(d.call('templogpro_config_set',OUT)==1)
         check(d.call('templogpro_config_init')==1)

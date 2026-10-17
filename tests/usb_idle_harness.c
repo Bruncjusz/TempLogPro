@@ -18,6 +18,8 @@ static uint32_t usb_present, flash_busy, buttons, stats_ready, measure_pulse, al
 static uint32_t tick, primask, ipsr, wfi_count, sleep_ms, injection, pending_irq;
 static uint32_t bad_order;
 static uint32_t sensor_pending;
+static uint32_t g_off_active;  /* OFF mode is not modelled here */
+static uint32_t app_eco_dark(void) { return 0u; }  /* nor eco mode */
 uint32_t templogpro_sensor_pending(void) { return sensor_pending; }
 static struct { uint32_t SCR; } fake_scb;
 volatile uint32_t test_count;

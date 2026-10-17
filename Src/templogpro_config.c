@@ -6,7 +6,11 @@
 #include <string.h>
 
 #define CONFIG_MAGIC                0x54434647u
-#define CONFIG_VERSION              7u
+#define CONFIG_VERSION              11u
+#define CONFIG_LED_CARD_VERSION     10u
+#define CONFIG_CLOCK_CARD_VERSION   9u
+#define CONFIG_OFF_VERSION          8u
+#define CONFIG_CLOCK_VERSION        7u
 #define CONFIG_TZ_VERSION           6u
 #define CONFIG_UNIT_VERSION         5u
 #define CONFIG_MENU_VERSION         4u
@@ -306,6 +310,9 @@ static void encode_config(const StoredConfig *config, uint8_t *raw)
     put_u16(raw, 46u, (uint16_t)(int16_t)config->value.tz_dst_delta_min);
     encode_rule(&raw[48], &config->value.tz_dst_start);
     encode_rule(&raw[54], &config->value.tz_dst_end);
+    raw[60] = (uint8_t)config->value.clock_mode;
+    raw[61] = (uint8_t)config->value.eco_mode;
+    raw[51] = (uint8_t)(config->value.lcd_menu_mask >> 16);  /* spare byte of the DST start rule */
     memcpy(&raw[CONFIG_TZ_NAME_OFFSET], config->value.tz_name, TEMPLOGPRO_TZ_NAME_SIZE);
     raw[CONFIG_TZ_NAME_OFFSET + TEMPLOGPRO_TZ_NAME_SIZE - 1u] = 0u;
     crc = crc16_ccitt_local(raw, CONFIG_CRC_OFFSET);
@@ -357,7 +364,9 @@ static uint32_t decode_config(const uint8_t *raw, StoredConfig *config)
     } else if (version == CONFIG_UNIT_VERSION) {
         stored_crc = get_u16(raw, CONFIG_V5_CRC_OFFSET);
         calculated_crc = crc16_ccitt_local(raw, CONFIG_V5_CRC_OFFSET);
-    } else if ((version == CONFIG_TZ_VERSION) || (version == CONFIG_VERSION)) {
+    } else if ((version == CONFIG_TZ_VERSION) || (version == CONFIG_CLOCK_VERSION) ||
+               (version == CONFIG_OFF_VERSION) || (version == CONFIG_CLOCK_CARD_VERSION) ||
+               (version == CONFIG_LED_CARD_VERSION) || (version == CONFIG_VERSION)) {
         stored_crc = get_u16(raw, CONFIG_CRC_OFFSET);
         calculated_crc = crc16_ccitt_local(raw, CONFIG_CRC_OFFSET);
     } else {
@@ -390,9 +399,29 @@ static uint32_t decode_config(const uint8_t *raw, StoredConfig *config)
     memset(config->value.tz_name, 0, sizeof(config->value.tz_name));
     config->value.tz_std_offset_min = 0;
     config->value.tz_dst_delta_min = 0;
-    /* v7 added the clock card (bit 12): show it on configurations saved earlier. */
-    if (version < CONFIG_VERSION) {
+    /* Byte 60 was always written as zero before, so older configs read "off". */
+    config->value.clock_mode = (version >= CONFIG_TZ_VERSION) ? raw[60] : 0u;
+    config->value.eco_mode = (version >= CONFIG_TZ_VERSION) ? raw[61] : 0u;
+    if (version >= CONFIG_VERSION) {
+        config->value.lcd_menu_mask |= (uint32_t)raw[51] << 16;
+    }
+    /* v7 added the clock card (bit 12), v8 the OFF card (bit 13), v9 the clock
+       mode card (bit 14), v10 the LED card (bit 15): show new cards on
+       configurations saved earlier. */
+    if (version < CONFIG_CLOCK_VERSION) {
         config->value.lcd_menu_mask |= (1u << 12);
+    }
+    if (version < CONFIG_OFF_VERSION) {
+        config->value.lcd_menu_mask |= (1u << 13);
+    }
+    if (version < CONFIG_CLOCK_CARD_VERSION) {
+        config->value.lcd_menu_mask |= (1u << 14);
+    }
+    if (version < CONFIG_LED_CARD_VERSION) {
+        config->value.lcd_menu_mask |= (1u << 15);
+    }
+    if (version < CONFIG_VERSION) {
+        config->value.lcd_menu_mask |= (1u << 16);  /* v11: eco card */
     }
     if (version >= CONFIG_TZ_VERSION) {
         config->value.tz_std_offset_min = (int16_t)get_u16(raw, 44u);
@@ -439,6 +468,8 @@ static uint32_t config_is_sane(const TempLogProConfig *config)
         config->pdf_enable > 1u ||
         config->led_enable > 1u ||
         config->usb_logging_enable > 1u ||
+        config->clock_mode > 1u ||
+        config->eco_mode > 1u ||
         config->temperature_unit > TEMPLOGPRO_UNIT_FAHRENHEIT) {
         return 0u;
     }
@@ -547,6 +578,10 @@ static void build_config_text(char *buf, uint32_t len)
     pos = append_u32(buf, pos, len, g_config.pdf_enable);
     pos = append_str(buf, pos, len, "\r\nled_enable=");
     pos = append_u32(buf, pos, len, g_config.led_enable);
+    pos = append_str(buf, pos, len, "\r\nclock_mode=");
+    pos = append_u32(buf, pos, len, g_config.clock_mode);
+    pos = append_str(buf, pos, len, "\r\neco_mode=");
+    pos = append_u32(buf, pos, len, g_config.eco_mode);
     pos = append_str(buf, pos, len, "\r\ntemperature_unit=");
     pos = append_str(buf, pos, len,
                      (g_config.temperature_unit == TEMPLOGPRO_UNIT_FAHRENHEIT) ? "F" : "C");
@@ -563,7 +598,7 @@ static void build_config_text(char *buf, uint32_t len)
     pos = append_str(buf, pos, len, "\r\nconfig_generation=");
     pos = append_u32(buf, pos, len, g_config_generation);
     pos = append_str(buf, pos, len, "\r\n# LCD: 0 temp, 1 state, 2 min, 3 max, 4 avg, 5 low, 6 high\r\n");
-    pos = append_str(buf, pos, len, "# LCD: 7 runtime, 8 records, 9 interval, 10 battery, 11 clear, 12 clock\r\n");
+    pos = append_str(buf, pos, len, "# LCD: 7 runtime, 8 records, 9 interval, 10 battery, 11 clear, 12 clock, 13 off, 14 clock mode, 15 leds, 16 eco\r\n");
     pos = append_str(buf, pos, len, "# tz_dst_*: month.week(5=last).weekday(0=Sun).minute; clock is UTC\r\n");
 
     (void)pos;
@@ -687,6 +722,18 @@ static uint32_t parse_config_text(const uint8_t *source, uint32_t length, TempLo
                 return 0u;
             }
             config->led_enable = value_u32;
+            parsed = 1u;
+        } else if (key_equals(&source[key_start], key_end - key_start, "clock_mode") != 0u) {
+            if (parse_bool_value(&source[value_start], value_end - value_start, &value_u32) == 0u) {
+                return 0u;
+            }
+            config->clock_mode = value_u32;
+            parsed = 1u;
+        } else if (key_equals(&source[key_start], key_end - key_start, "eco_mode") != 0u) {
+            if (parse_bool_value(&source[value_start], value_end - value_start, &value_u32) == 0u) {
+                return 0u;
+            }
+            config->eco_mode = value_u32;
             parsed = 1u;
         } else if (key_equals(&source[key_start], key_end - key_start, "tz_name") != 0u) {
             if (parse_name_value(&source[value_start], value_end - value_start, config->tz_name) == 0u) {

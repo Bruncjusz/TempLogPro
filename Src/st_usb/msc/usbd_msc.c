@@ -912,6 +912,9 @@ static void cdc_queue_logger_status(USBD_HandleTypeDef *pdev)
   } else {
     cdc_queue_text(pdev, " samples=0");
   }
+  if (templogpro_app_power_off_armed() != 0U) {
+    cdc_queue_text(pdev, " off=ARMED");
+  }
 
   cdc_queue_text(pdev, "\n");
 }
@@ -1055,6 +1058,16 @@ static void cdc_process_line(USBD_HandleTypeDef *pdev, const char *line)
     cdc_queue_text(pdev, "ERR E006 use LOGGER CLEAR CONFIRM\n");
   } else if (cdc_text_equals(line, "LOGGER CLEAR CONFIRM") != 0U) {
     cdc_queue_logger_action(pdev, "CLEAR", templogpro_app_clear_logger());
+  } else if (cdc_text_equals(line, "POWER OFF") != 0U) {
+    if (templogpro_app_power_off_arm() != 0U) {
+      templogpro_usb_files_snapshot_reset();
+      cdc_queue_text(pdev, "OK POWER OFF\n");
+    } else {
+      cdc_queue_text(pdev, "ERR E003 power off failed\n");
+    }
+  } else if (cdc_text_equals(line, "POWER OFF CANCEL") != 0U) {
+    templogpro_app_power_off_cancel();
+    cdc_queue_text(pdev, "OK POWER OFF CANCEL\n");
   } else if (cdc_text_equals(line, "GET CONFIG") != 0U) {
     cdc_queue_config(pdev);
   } else if (cdc_text_equals(line, "CONFIG BEGIN") != 0U) {
