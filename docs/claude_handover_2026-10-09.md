@@ -508,6 +508,8 @@ i sprawdzony testem `lcd_segment_map_vectors.py` na obrazie.
   i BKP0-19, RTCRST, ponowne LSEON (RTCRST je kasuje!), czekanie <= 3 s, odtworzenie BKP, kalendarz +czas
   czekania; fallback na LSI. Hak LCD suspend zostaje na stałe, app re-inicjuje LCD po przełączeniu.
   POWER.TXT: RTC_SOURCE. Przyczyna: LSI dryfował ~37 % (+80 min / 2 h 11 min) przy zmianie napięcia.
+- 2026-10-17: wersja **1.2.0-beta**; obejście blokady słabej baterii (ponowny START/CLR w 15 s po bAt wykonuje
+  operację). Wgrane: bin `691aadc127a1776327db0fcb0e2f94db06a65005015cfa23aa751d3d654e2d31`.
 ## Znane błędy, nienaprawione
 
 - Brak.

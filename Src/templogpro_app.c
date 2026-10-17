@@ -94,6 +94,9 @@ static uint32_t g_off_active;  /* OFF: LCD, LEDs and RTC wake-ups disabled */
 static uint32_t g_lcd_hw_off;  /* LCD controller switched off (eco or OFF) */
 static uint32_t g_start_at;    /* delayed start, UTC; 0 = none */
 static uint32_t g_restart_at_ms;  /* pending MCU restart (after a panel CLEAR) */
+static uint32_t g_power_override_action;   /* START/CLR refused for a weak battery... */
+static uint32_t g_power_override_until_ms; /* ...a repeat before this time forces it */
+#define APP_POWER_OVERRIDE_MS  15000u
 static uint16_t g_alarm_latched;      /* alarms that outlasted alarm_delay_min */
 static uint32_t g_exc_high_since;     /* start of the current excursion, UTC */
 static uint32_t g_exc_low_since;
@@ -1140,9 +1143,18 @@ static void app_execute_action(uint32_t now_ms)
     }
 
     if (((action == APP_ACTION_START) || (action == APP_ACTION_CLEAR)) && (app_flash_power_ok() == 0u)) {
-        g_app_state = g_action_return_state;
-        app_battery_warning(now_ms, 3000u);
-        return;
+        /* Bypass: repeating the same action within 15 s of "bAt" runs it anyway
+           (the user accepts the risk of a brown-out reset; it is logged). */
+        if ((g_power_override_action == (uint32_t)action) &&
+            ((int32_t)(now_ms - g_power_override_until_ms) < 0)) {
+            g_power_override_action = APP_ACTION_NONE;
+        } else {
+            g_app_state = g_action_return_state;
+            app_battery_warning(now_ms, 3000u);
+            g_power_override_action = (uint32_t)action;
+            g_power_override_until_ms = now_ms + APP_POWER_OVERRIDE_MS;
+            return;
+        }
     }
 
     if (action == APP_ACTION_START) {

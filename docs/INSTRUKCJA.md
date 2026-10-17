@@ -1,6 +1,6 @@
 # TempLogPro — instrukcja obsługi
 
-Firmware 1.1.0 · [README](../README.md) · [Dokumentacja techniczna](../DOKUMENTACJA.md) · [Sprzęt i podłączenie ST-Linka](HARDWARE.md)
+Firmware 1.2.0-beta · [README](../README.md) · [Dokumentacja techniczna](../DOKUMENTACJA.md) · [Sprzęt i podłączenie ST-Linka](HARDWARE.md)
 
 TempLogPro to rejestrator temperatury: mierzy temperaturę w stałych odstępach,
 zapisuje pomiary w pamięci, ostrzega o przekroczeniu ustawionego zakresu,
@@ -282,6 +282,8 @@ ekran **CLR** i oba przyciski przez 3 s. Przed czyszczeniem zapisz raport lub
 - Przed **CLR** i **START** na baterii urządzenie sprawdza napięcie. Poniżej
   ok. 2,85 V na baterii (0 % na ekranie Bateria) odmawia: przez 3 s na ekranie jest `bAt` i migają ikona baterii i X, a stan się nie zmienia —
   kasowanie pamięci przy słabej baterii mogłoby zrestartować urządzenie.
+  **Obejście:** ponowne przytrzymanie tego samego przycisku w ciągu 15 s po `bAt`
+  wykona START/CLR mimo słabej baterii (na własne ryzyko restartu).
   Wymień baterię albo podłącz USB.
 - Jeśli mimo to bateria „siądzie” w trakcie CLR/START, po ponownym starcie
   przez 5 s miga ikona baterii, a przyczyna jest w `POWER.TXT`

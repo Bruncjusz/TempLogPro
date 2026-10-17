@@ -1,6 +1,6 @@
 # TempLogPro — dokumentacja i raport z projektu
 
-Wersja dokumentu: 2026-10-13 · firmware **1.1.0**
+Wersja dokumentu: 2026-10-13 · firmware **1.2.0-beta**
 Autor projektu: **Brunon Kucharski** · opracowane we współpracy z **Codex (OpenAI)** i **Claude (Anthropic)**
 
 Instrukcja obsługi dla użytkownika: [docs/INSTRUKCJA.md](docs/INSTRUKCJA.md). Sprzęt, złącze SWD i pinout: [docs/HARDWARE.md](docs/HARDWARE.md).

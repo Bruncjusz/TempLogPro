@@ -13,7 +13,7 @@ offline — z wykresem, analizą przekroczeń, eksportem do PDF i ustawieniami
 urządzenia przez Web Serial.
 
 Autor: **Brunon Kucharski** · opracowane we współpracy z **Codex (OpenAI)** i **Claude (Anthropic)**
-Wersja firmware: **1.1.0** · licencja **MIT**  
+Wersja firmware: **1.2.0-beta** (wydanie: **1.1.0**) · licencja **MIT**  
 _Gałąź main zawiera już funkcje przygotowywane do następnego wydania (tryb zegarka, eco, OFF, opóźniony start, opóźnienie alarmu, nowy wygląd panelu, zegar z kwarcu, kolejność ekranów, instrukcja w panelu); gotowe wydania są w zakładce Releases._
 
 ## Funkcje

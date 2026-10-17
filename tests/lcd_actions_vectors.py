@@ -72,6 +72,32 @@ for action, state in ((1,0), (3,1), (3,2)):
         d.call('templogpro_app_process')
     check((d.starts, d.stops, d.formats) == (0,0,0) and d.flash_ops == [])
     check(d.get('g_app_state') == state and d.get('g_lcd_message_icons') != 0)
+# Bypass: the same action repeated within 15 s of bAt runs anyway.
+for action, state in ((1,0), (3,2)):
+    d = ActionDevice(state, action)
+    d.vdd_mv = 2200
+    for attempt in range(2):
+        d.held = action if action < 3 else 3
+        d.call('app_start_action', action, d.tick)
+        for _ in range(6):
+            d.advance(400)
+            d.call('templogpro_app_process')
+        d.held = 0
+        d.advance(400)
+        d.call('templogpro_app_process')
+    check((d.starts, d.formats) == ((1,0) if action == 1 else (0,1)))
+d = ActionDevice(0, 1)                                  # too late (after 15 s): refused again
+d.vdd_mv = 2200
+for gap in (0, 16000):
+    d.advance(gap)
+    d.held = 1
+    d.call('app_start_action', 1, d.tick)
+    for _ in range(6):
+        d.advance(400)
+        d.call('templogpro_app_process')
+    d.held = 0
+check(d.starts == 0)
+
 for action, state, op in ((1,0,2), (3,2,1)):
     d = ActionDevice(state, action)
     d.call('app_start_action', action, d.tick)
