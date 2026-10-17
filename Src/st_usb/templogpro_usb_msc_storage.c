@@ -19,6 +19,7 @@
 static int8_t storage_init(uint8_t lun);
 static int8_t storage_get_capacity(uint8_t lun, uint32_t *block_num, uint16_t *block_size);
 static int8_t storage_is_ready(uint8_t lun);
+static volatile uint32_t g_media_change_polls;
 static int8_t storage_is_write_protected(uint8_t lun);
 static int8_t storage_read(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len);
 static int8_t storage_write(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len);
@@ -97,6 +98,7 @@ static int8_t storage_init(uint8_t lun)
     (void)lun;
     templogpro_usb_files_snapshot_reset();
     layout_cache_reset();
+    g_media_change_polls = 0U;  /* fresh mount: nothing to signal */
     g_config_write_status = 0U;
     g_time_write_status = 0U;
     return 0;
@@ -115,9 +117,21 @@ static int8_t storage_get_capacity(uint8_t lun, uint32_t *block_num, uint16_t *b
     return 0;
 }
 
+/* After the files change (START/STOP/CLR, new settings, OFF) report "no medium"
+   to a couple of TEST UNIT READY polls: Windows then drops its cached copy and
+   mounts the disk again, so Explorer shows the new files without replugging. */
+void templogpro_usb_msc_storage_media_changed(void)
+{
+    g_media_change_polls = 2U;
+}
+
 static int8_t storage_is_ready(uint8_t lun)
 {
     (void)lun;
+    if (g_media_change_polls != 0U) {
+        g_media_change_polls--;
+        return -1;
+    }
     return 0;
 }
 

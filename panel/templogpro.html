@@ -117,6 +117,93 @@ button.primary:hover{filter:brightness(1.07);background:var(--accent)}
 label span{display:block;margin-bottom:4px;font-size:12px;color:var(--muted)}
 input,select{height:38px;padding:0 11px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--fg)}
 input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--soft)}
+body{--field:#fbfcfd;--glow1:rgba(47,107,236,.10);--glow2:rgba(124,58,237,.07)}
+body.dark{--field:#11141a;--glow1:rgba(93,141,255,.12);--glow2:rgba(167,139,250,.08)}
+body{background-image:radial-gradient(1100px 560px at 8% -12%,var(--glow1),transparent 62%),radial-gradient(900px 520px at 102% -6%,var(--glow2),transparent 60%);background-attachment:fixed}
+.setgroup{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 3%,var(--panel)),var(--panel) 140px)}
+input,select{height:40px;padding:0 12px;border-radius:10px;background-color:var(--field);transition:border-color .15s ease,box-shadow .15s ease,background-color .15s ease}
+input:hover,select:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+select{appearance:none;-webkit-appearance:none;padding-right:36px;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2369717f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;background-size:12px 8px}
+body.dark select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238d95a3' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+select:focus{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%232f6bec' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+body.dark select:focus{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%235d8dff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+input[type=datetime-local]::-webkit-calendar-picker-indicator{opacity:.55;cursor:pointer;padding:5px;border-radius:7px;transition:opacity .15s,background-color .15s}
+input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;background-color:var(--soft)}
+body.dark input[type=datetime-local]::-webkit-calendar-picker-indicator{filter:invert(.85)}
+.stepper{display:flex;align-items:stretch;width:100%;height:40px;border:1px solid var(--border);border-radius:10px;background:var(--field);overflow:hidden;transition:border-color .15s ease,box-shadow .15s ease}
+.stepper:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+.stepper:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--soft)}
+.stepper input,.field .stepper input{flex:1;min-width:0;width:auto;height:auto;border:0;border-radius:0;background:transparent;box-shadow:none;padding:0 12px;text-align:left;font-variant-numeric:tabular-nums;font-weight:600;-moz-appearance:textfield}
+.stepper input:focus{box-shadow:none}
+.stepper input::-webkit-inner-spin-button,.stepper input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.stepbtn{flex:none;width:38px;min-width:0;padding:0;display:grid;place-items:center;border:0;background:transparent;color:var(--muted);font-size:18px;font-weight:600;line-height:1;cursor:pointer;user-select:none;transition:background-color .15s ease,color .15s ease}
+.stepbtn.down{border-left:1px solid var(--border)}
+.stepbtn.up{border-left:1px solid var(--border)}
+.stepbtn:hover{background:var(--soft);color:var(--accent)}
+.stepbtn:active{background:color-mix(in srgb,var(--accent) 18%,transparent)}
+.startdelay .stepper{width:150px;height:36px}
+.startdelay select,.startdelay input[type=datetime-local]{height:36px}
+.stepper:has(input[hidden]){display:none}
+.stepper:has(input:disabled){opacity:.55}
+input[type=checkbox],label.checkline input[type=checkbox],.lcd-menu-options input[type=checkbox]{appearance:none;-webkit-appearance:none;flex:none;width:18px;height:18px;margin:0;padding:0;border:1.5px solid var(--grid2);border-radius:6px;background-color:var(--field);cursor:pointer;transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease,transform .1s ease}
+input[type=checkbox]:hover{border-color:var(--accent)}
+input[type=checkbox]:active{transform:scale(.92)}
+input[type=checkbox]:focus-visible{outline:none;box-shadow:0 0 0 3px var(--soft)}
+input[type=checkbox]:checked{border-color:transparent;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1.5 5.2l3 3 6-6.4' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/11px 9px no-repeat,linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 65%,var(--tz)))}
+input[type=checkbox]:disabled{opacity:.5;cursor:default}
+.lcd-menu-options label{transition:border-color .15s ease,background-color .15s ease}
+.lcd-menu-options label:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+.lcd-menu-options label:has(input:checked){border-color:color-mix(in srgb,var(--accent) 38%,var(--border));background:color-mix(in srgb,var(--accent) 7%,var(--panel2))}
+.statusmsg{--c:var(--accent);display:inline-flex;align-items:flex-start;gap:10px;max-width:100%;margin:12px 0 0;padding:9px 14px 9px 10px;border:1px solid color-mix(in srgb,var(--c) 35%,var(--border));border-radius:11px;background:color-mix(in srgb,var(--c) 8%,var(--panel));color:var(--fg);font-size:13px;line-height:1.45}
+.statusmsg:empty{display:none}
+.statusmsg:before{content:"i";flex:none;display:grid;place-items:center;width:19px;height:19px;margin-top:-1px;border-radius:50%;background:var(--c);color:#fff;font-size:11.5px;font-weight:800}
+.statusmsg.ok{--c:var(--accent2)}.statusmsg.ok:before{content:"\2713"}
+.statusmsg.bad{--c:var(--alarm)}.statusmsg.bad:before{content:"!"}
+.statusmsg.warn{--c:var(--gold)}.statusmsg.warn:before{content:"!"}
+.statusmsg.ok,.statusmsg.bad,.statusmsg.warn,.statusmsg.info{color:var(--fg)}
+.statusmsg.pop{animation:msgpop .28s ease}
+@keyframes msgpop{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+.modal{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:16px;background:rgba(8,10,14,.48);backdrop-filter:blur(6px);animation:modalfade .18s ease}
+.modal[hidden]{display:none}
+.modalcard{width:min(460px,100%);padding:22px 22px 18px;border:1px solid var(--border);border-radius:16px;background:var(--panel);color:var(--fg);box-shadow:0 24px 64px rgba(0,0,0,.35);animation:modalin .24s cubic-bezier(.2,.9,.3,1.15)}
+.modalicon{display:grid;place-items:center;width:42px;height:42px;margin-bottom:14px;border-radius:12px;color:#fff;font-size:21px;font-weight:800;background:linear-gradient(135deg,var(--gold),color-mix(in srgb,var(--gold) 60%,var(--alarm)))}
+.modal.danger .modalicon{background:linear-gradient(135deg,var(--alarm),color-mix(in srgb,var(--alarm) 65%,#000))}
+.modaltext p{margin:0 0 8px;color:var(--muted);line-height:1.5}
+.modaltext p:first-child{margin-bottom:10px;color:var(--fg);font-size:15.5px;font-weight:700}
+.modalbtns{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+.modalbtns button{height:40px;padding:0 18px;border:1px solid var(--border);border-radius:10px;background:var(--panel2);color:var(--fg);font-weight:650;cursor:pointer;transition:filter .15s ease,transform .1s ease}
+.modalbtns button:hover{filter:brightness(1.06)}
+.modalbtns button:active{transform:scale(.97)}
+.modalbtns #askYes{border-color:transparent;background:var(--accent);color:#fff}
+.modal.danger #askYes{background:var(--alarm)}
+@keyframes modalfade{from{opacity:0}to{opacity:1}}
+@keyframes modalin{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+@media print{.modal{display:none!important}}
+.dtwrap{position:relative;display:flex;align-items:center;width:100%}
+.startdelay .dtwrap,.rangeinputs .dtwrap{width:auto}
+.dtwrap input{width:100%;padding-right:44px}
+.dtwrap input::-webkit-calendar-picker-indicator{display:none}
+.dtwrap:has(input[hidden]){display:none}
+.dtbtn{position:absolute;top:50%;right:5px;display:grid;place-items:center;width:32px;height:30px;transform:translateY(-50%);border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer;transition:background-color .15s ease,color .15s ease}
+.dtbtn:hover{background:var(--soft);color:var(--accent)}
+.dtbtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.dtpop{position:absolute;z-index:60;top:calc(100% + 8px);right:0;width:296px;padding:14px;border:1px solid var(--border);border-radius:15px;background:var(--panel);color:var(--fg);box-shadow:0 18px 48px rgba(0,0,0,.28);animation:modalin .18s ease}
+.dthead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:14.5px;font-weight:700}
+.dthead button,.dttime button{min-width:0;padding:0;display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--border);border-radius:9px;background:var(--panel2);color:var(--fg);font-size:16px;line-height:1;cursor:pointer;user-select:none;transition:border-color .15s ease,color .15s ease}
+.dthead button:hover,.dttime button:hover{border-color:var(--accent);color:var(--accent)}
+.dtgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;text-align:center}
+.dtgrid .wd{padding:4px 0;color:var(--muted);font-size:11px;font-weight:700}
+.dtgrid button{min-width:0;padding:0;height:34px;border:0;border-radius:9px;background:transparent;color:var(--fg);font-variant-numeric:tabular-nums;cursor:pointer;transition:background-color .12s ease}
+.dtgrid button:hover{background:var(--soft)}
+.dtgrid button.today{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.dtgrid button.sel{background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 65%,var(--tz)));color:#fff;font-weight:700}
+.dttime{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.dttime b{min-width:36px;text-align:center;font-size:21px;font-variant-numeric:tabular-nums}
+.dttime .dtcol{margin:0 4px;color:var(--muted);font-size:20px;font-weight:700}
+.dtfoot{display:flex;justify-content:space-between;gap:8px;margin-top:12px}
+.dtfoot button{height:36px;padding:0 16px;border:1px solid var(--border);border-radius:9px;background:var(--panel2);color:var(--fg);font-weight:650;cursor:pointer}
+.dtfoot .dtok{border-color:transparent;background:var(--accent);color:#fff}
+@media print{.dtbtn,.dtpop{display:none!important}.wm-b{background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;color:#1E78FF!important;-webkit-text-fill-color:#1E78FF}.tagline i{background:#1E78FF!important}.logo{filter:none!important}}
 .chartlegend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:0 0 4px}
 .chartlegend:empty{display:none}
 .legitem{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);white-space:nowrap}
@@ -194,6 +281,10 @@ label.checkline input,.lcd-menu-options input{flex:none;width:16px;height:16px;p
 .cmdicon.power{box-shadow:none;border:1.5px solid currentColor;border-top-color:transparent;box-sizing:border-box}
 .cmdicon.power:before{content:"";position:absolute;left:6.75px;top:-2px;width:1.5px;height:8px;background:currentColor;border-radius:1px}
 .logger-off{color:var(--fg)}
+.startdelay{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;font-size:13px}
+.startdelay select,.startdelay input{width:auto;min-width:0}
+.startdelay .note{color:var(--muted)}
+.shortexc td{color:var(--muted)}
 .logger-status{color:var(--fg)}
 .logger-start{color:var(--accent2)}
 .logger-stop{color:var(--gold)}
@@ -365,6 +456,7 @@ tbody tr:last-child td,.kv tr:last-child td{border-bottom:0}
 </div>
 </div>
 <div class="navrow noprint">
+<div class="modal noprint" id="askModal" hidden><div class="modalcard" role="dialog" aria-modal="true" aria-labelledby="askText"><div class="modalicon">!</div><div class="modaltext" id="askText"></div><div class="modalbtns"><button type="button" id="askNo">Anuluj</button><button type="button" id="askYes">OK</button></div></div></div>
 <nav class="tabs tabbar">
 <button class="tabbtn active" data-tab="report" id="tabReportBtn">Raport
 </button>
@@ -499,6 +591,7 @@ tbody tr:last-child td,.kv tr:last-child td{border-bottom:0}
       <button class="logger-btn logger-clear" id="loggerClearBtn"><span class="cmdicon clear"></span><span class="btntext">Wyczyść pamięć</span></button>
       <button class="logger-btn logger-off" id="loggerOffBtn"><span class="cmdicon power"></span><span class="btntext">Wyłącz (OFF)</span></button>
     </div>
+    <div class="startdelay noprint" id="startDelayRow"><label for="startDelayMode" id="startDelayLabel">Start:</label><select id="startDelayMode"><option value="now" id="startNowOpt">od razu</option><option value="in" id="startInOpt">za … minut</option><option value="at" id="startAtOpt">o godzinie</option></select><input type="number" id="startDelayMin" min="1" max="10080" step="1" value="30" hidden><input type="datetime-local" id="startDelayAt" step="60" hidden><span class="note" id="startWaitInfo"></span></div>
   </div>
   <div class="memblock">
     <div class="memtop"><span id="memLabel">Wolna pamięć</span><b id="memPct">-</b></div>
@@ -520,6 +613,10 @@ tbody tr:last-child td,.kv tr:last-child td{border-bottom:0}
       <div class="field">
         <label id="cfgHighLabel" for="cfgHigh"><span class="emoji">&#128293;</span><span class="labeltext">Górny próg alarmu (°C)</span></label>
         <input type="number" min="-99" max="150" step="0.1" id="cfgHigh">
+      </div>
+      <div class="field">
+        <label id="cfgAlarmDelayLabel" for="cfgAlarmDelay"><span class="emoji">&#9201;</span><span class="labeltext">Opóźnienie alarmu (min, 0 = od razu)</span></label>
+        <input type="number" min="0" max="240" step="1" id="cfgAlarmDelay">
       </div>
     </div>
   </fieldset>
@@ -691,6 +788,27 @@ const tx={pl:{
   loggerClearAsk:"Na pewno wyczyścić pamięć loggera? Tego nie da się cofnąć.",
   loggerOff:"Wyłącz (OFF)",
   loggerOffAsk:"Wyłączyć urządzenie do przechowywania (OFF)?\n\nLogger zostanie zatrzymany. Po odłączeniu USB urządzenie całkowicie się wygasi (bez pomiarów, ekranu i diod).\nWłączenie: przytrzymaj oba przyciski przez 3 s albo podłącz USB.",
+  alarmDelayLabel:"Opóźnienie alarmu (min, 0 = od razu)",
+  askOk:"Potwierdź",
+  clearedRestart:"Pamięć wyczyszczona. Urządzenie uruchamia się ponownie — raport odświeży się za kilka sekund.",
+  monthsNom:["Styczeń","Luty","Marzec","Kwiecień","Maj","Czerwiec","Lipiec","Sierpień","Wrzesień","Październik","Listopad","Grudzień"],
+  wdShort:["Pn","Wt","Śr","Cz","Pt","So","Nd"],
+  dtNow:"Teraz",
+  dtOk:"Ustaw",
+  askCancel:"Anuluj",
+  askClearYes:"Wyczyść pamięć",
+  askOffYes:"Wyłącz",
+  alarmDelayInfo:"Opóźnienie alarmu",
+  shortExc:"Krótkie wyjścia (poniżej %d min, bez alarmu)",
+  shortTag:"krótkie",
+  shortVerdict:"krótkich wyjść poniżej %d min (bez alarmu)",
+  vbatMinInfo:"Najniższe napięcie baterii",
+  vbatLow:"wymień baterię",
+  startLabel:"Start:",
+  startNow:"od razu",
+  startIn:"za … minut",
+  startAt:"o godzinie",
+  startWaiting:"Czeka na start",
   loggerOffArmed:"OFF ustawiony \u2014 odłącz USB, a urządzenie się wyłączy. Włączenie: oba przyciski przez 3 s.",
   clockModeLabel:"Tryb zegarka (zamiast pustego ekranu)",
   ecoModeLabel:"Tryb eco (wygaszanie ekranu i diod)",
@@ -912,6 +1030,27 @@ const tx={pl:{
   loggerClearAsk:"Clear logger memory? This cannot be undone.",
   loggerOff:"Power off (OFF)",
   loggerOffAsk:"Power the device off for storage (OFF)?\n\nThe logger will be stopped. After USB is unplugged the device goes fully dark (no measurements, display or LEDs).\nTo turn it on: hold both buttons for 3 s or plug in USB.",
+  alarmDelayLabel:"Alarm delay (min, 0 = immediate)",
+  askOk:"Confirm",
+  clearedRestart:"Memory cleared. The device is restarting — the report will reload in a few seconds.",
+  monthsNom:["January","February","March","April","May","June","July","August","September","October","November","December"],
+  wdShort:["Mo","Tu","We","Th","Fr","Sa","Su"],
+  dtNow:"Now",
+  dtOk:"Set",
+  askCancel:"Cancel",
+  askClearYes:"Clear memory",
+  askOffYes:"Power off",
+  alarmDelayInfo:"Alarm delay",
+  shortExc:"Short excursions (under %d min, no alarm)",
+  shortTag:"short",
+  shortVerdict:"short excursions under %d min (no alarm)",
+  vbatMinInfo:"Lowest battery voltage",
+  vbatLow:"replace the battery",
+  startLabel:"Start:",
+  startNow:"now",
+  startIn:"in … minutes",
+  startAt:"at a time",
+  startWaiting:"Waiting to start",
   loggerOffArmed:"OFF set \u2014 unplug USB and the device turns off. To turn on: hold both buttons for 3 s.",
   clockModeLabel:"Clock mode (instead of a blank display)",
   ecoModeLabel:"Eco mode (display and LEDs fully off)",
@@ -1153,8 +1292,10 @@ if(cur&&d!==cur.dir){cur.end=r;cur.open=0;out.push(cur);cur=null}
 if(d&&!cur)cur={dir:d,start:r,peak:r,end:r,open:1};
 if(cur){if(d==='H'?r.t>cur.peak.t:r.t<cur.peak.t)cur.peak=r;cur.end=r}
 prev=r});if(cur)out.push(cur);return out}
-let epFor=null,epCache=[];
-function curEpisodes(){if(epFor!==chartTemps){epFor=chartTemps;epCache=episodes(chartTemps)}return epCache}
+let epFor=null,epCache=[],epShort=[],epDelay=-1;
+function alarmDelayMs(){return Math.max(0,+cfg.alarmDelay||0)*60000}
+function curEpisodes(){let dl=alarmDelayMs();if(epFor!==chartTemps||epDelay!==dl){epFor=chartTemps;epDelay=dl;let all=episodes(chartTemps);epCache=all.filter(e=>!dl||epDur(e)>=dl);epShort=all.filter(e=>dl&&epDur(e)<dl)}return epCache}
+function curShortEpisodes(){curEpisodes();return epShort}
 function epDur(e){return Math.max(0,e.end.ms-e.start.ms)}
 function sumDur(a){return a.reduce((s,e)=>s+epDur(e),0)}
 function activeMs(list){let s=0;for(let i=1;i<list.length;i++){let d=list[i].ms-list[i-1].ms;if(d>0&&d<=gapMax)s+=d}return s}
@@ -1165,10 +1306,10 @@ function renderVerdict(){let e=$('verdict');if(!e)return;
 let t=T(),ep=curEpisodes(),cls='none',icon='–',head=t.verdictNone,det='';
 let mx=extremeRow(1),mn=extremeRow(-1),ext=(r,lbl)=>'<span'+(outDir(r)?' class="x"':'')+'>'+lbl+' <em>'+unit(r.t)+'</em> ('+shortDt(r)+')</span>';if(chartTemps.length)det=ext(mx,t.vMax)+' &nbsp;&middot;&nbsp; '+ext(mn,t.vMin);if(chartTemps.length&&!ep.length){cls='ok';icon='&#10003;';head=t.verdictOk}
 else if(ep.length){cls='bad';icon='!';head=t.verdictBad+(ep[ep.length-1].open?' &ndash; '+t.ongoing:'')}
-e.className='verdict '+cls;e.innerHTML='<span class="vi"><span>'+icon+'</span></span><div><b>'+head+'</b><div class="vd">'+det+'</div></div>'}
+if(!ep.length&&curShortEpisodes().length)det+=' &nbsp;&middot;&nbsp; '+curShortEpisodes().length+' '+t.shortVerdict.replace('%d',cfg.alarmDelay);e.className='verdict '+cls;e.innerHTML='<span class="vi"><span>'+icon+'</span></span><div><b>'+head+'</b><div class="vd">'+det+'</div></div>'}
 function renderEpisodeSummary(){let t=T(),ep=curEpisodes(),st=chartStats(),hi=ep.filter(x=>x.dir==='H'),lo=ep.filter(x=>x.dir==='L'),line=a=>a.length?a.length+' '+t.epCount+', '+durMs(sumDur(a)):t.noEpisodes,rr=[[t.aboveLong,line(hi)],[t.belowLong,line(lo)]];
 if(ep.length){let l=ep.reduce((m,x)=>epDur(x)>epDur(m)?x:m,ep[0]);rr.push([t.longest,durMs(epDur(l))+' ('+shortDt(l.start)+', '+(l.dir==='H'?t.above:t.below)+')'])}
-rr.push([lang==='pl'?'Maksimum / próg maks.':'Maximum / high threshold',limitCompare(st.max,cfg.high,1)],[lang==='pl'?'Minimum / próg min.':'Minimum / low threshold',limitCompare(st.min,cfg.low,0)]);kv('episodeSummary',rr)}
+if(alarmDelayMs()){let s=curShortEpisodes();rr.push([t.shortExc.replace('%d',cfg.alarmDelay),s.length?s.length+' '+t.epCount+', '+durMs(sumDur(s)):t.noEpisodes])}rr.push([lang==='pl'?'Maksimum / próg maks.':'Maximum / high threshold',limitCompare(st.max,cfg.high,1)],[lang==='pl'?'Minimum / próg min.':'Minimum / low threshold',limitCompare(st.min,cfg.low,0)]);kv('episodeSummary',rr)}
 function chartStats(){let v=chartTemps.map(r=>r.t).filter(Number.isFinite);return{n:v.length,min:v.length?Math.min(...v):NaN,max:v.length?Math.max(...v):NaN,avg:v.length?v.reduce((a,b)=>a+b,0)/v.length:NaN}}
 function currentEvents(){return events.filter(r=>Number.isFinite(r.ms)&&r.ms>=chartFromMs&&r.ms<=chartToMs)}
 function renderSummary(){let t=T(),st=chartStats(),ep=curEpisodes(),lt=chartTemps[chartTemps.length-1],act=activeMs(chartTemps),outMs=sumDur(ep),nh=ep.filter(x=>x.dir==='H').length;
@@ -1181,7 +1322,7 @@ let free=Math.max(0,cap-used),pct=100*free/cap,nf=n=>n.toLocaleString(lang==='pl
 function kv(id,a){let e=$(id);if(e)e.innerHTML=a.map(x=>'
 <tr><td>'+x[0]+'</td><td>'+x[1]+'</td>
 </tr>').join('')}
-function renderInfo(){let t=T(),c=localDate(),st=chartStats(),rs=chartTemps[0]||start,rl=chartTemps[chartTemps.length-1]||last,hiLbl=lang==='pl'?'Maksymalna temperatura / pr\u00f3g maks.':'Maximum temperature / high threshold',loLbl=lang==='pl'?'Minimalna temperatura / pr\u00f3g min.':'Minimum temperature / low threshold',rr=[[t.state,statusBadge()],[t.start,rs?rs.dt:'-']];if(state==='STOP'&&(liveStopDate||lastStop))rr.push([t.stopDate,liveStopDate||(lastStop?lastStop.dt:'-')]);let runMs=workRanges().filter(x=>dtms(x[1])>=chartFromMs&&dtms(x[0])<=chartToMs).reduce((a,x)=>a+Math.max(0,dtms(x[1])-dtms(x[0])),0);let sesMs=Math.max(0,dtms(rl)-dtms(rs)),measMs=activeMs(chartTemps),near=(a,b)=>Math.abs(a-b)<=Math.max(60000,b*.02);rr.push([t.last,rl?rl.dt:'-'],[t.session,dur(rs,rl)]);if(runMs&&!near(runMs,sesMs))rr.push([t.totalRun,durMs(runMs)]);if(!near(measMs,runMs||sesMs))rr.push([t.measuredTime,durMs(measMs)]);rr.push([t.intervalInfo,Number.isFinite(+cfg.interval)?cfg.interval+' s':'-'],[t.thresholdsInfo,unit(+cfg.low)+' … '+unit(+cfg.high)]);kv('runInfo',rr);let di=[[t.deviceName,'{{PRODUCT}} / STM32L152RC'],['Firmware','{{FW_VERSION}}'],[t.authorInfo,'{{AUTHOR}}'],[t.collabInfo,'Codex (OpenAI), Claude (Anthropic)'],[t.csvRows,cfg.records===undefined?meas.length:cfg.records],[lang==='pl'?'Wolna pami\u0119\u0107':'Free memory',freeMemoryText()]];if(badRecords)di.push([t.badRecords,badRecords]);di.push([t.events,events.length],[t.firstMeas,firstTemp?firstTemp.dt:'-'],[t.lastMeas,lastTemp?lastTemp.dt:'-'],[t.intervalInfo,Number.isFinite(+cfg.interval)?cfg.interval+' s':'-'],[t.thresholdsInfo,unit(+cfg.low)+' \u2026 '+unit(+cfg.high)],[t.unitInfo,cfg.unit?'\u00b0F':'\u00b0C'],[t.tzInfo,devZone.name?devZone.name.replace(/_/g,' ')+' ('+tzFmt(zoneCurOffset())+')':t.tzUnset],[t.tzRuleInfo,ruleText(devZone)]);if(cfg.reset)di.push([t.resetInfo,resetText(cfg.reset)]);kv('deviceInfo',di);renderMemory();updateGlobalStatus()}
+function renderInfo(){let t=T(),c=localDate(),st=chartStats(),rs=chartTemps[0]||start,rl=chartTemps[chartTemps.length-1]||last,hiLbl=lang==='pl'?'Maksymalna temperatura / pr\u00f3g maks.':'Maximum temperature / high threshold',loLbl=lang==='pl'?'Minimalna temperatura / pr\u00f3g min.':'Minimum temperature / low threshold',rr=[[t.state,statusBadge()],[t.start,rs?rs.dt:'-']];if(state==='STOP'&&(liveStopDate||lastStop))rr.push([t.stopDate,liveStopDate||(lastStop?lastStop.dt:'-')]);let runMs=workRanges().filter(x=>dtms(x[1])>=chartFromMs&&dtms(x[0])<=chartToMs).reduce((a,x)=>a+Math.max(0,dtms(x[1])-dtms(x[0])),0);let sesMs=Math.max(0,dtms(rl)-dtms(rs)),measMs=activeMs(chartTemps),near=(a,b)=>Math.abs(a-b)<=Math.max(60000,b*.02);rr.push([t.last,rl?rl.dt:'-'],[t.session,dur(rs,rl)]);if(runMs&&!near(runMs,sesMs))rr.push([t.totalRun,durMs(runMs)]);if(!near(measMs,runMs||sesMs))rr.push([t.measuredTime,durMs(measMs)]);rr.push([t.intervalInfo,Number.isFinite(+cfg.interval)?cfg.interval+' s':'-'],[t.thresholdsInfo,unit(+cfg.low)+' … '+unit(+cfg.high)]);kv('runInfo',rr);let di=[[t.deviceName,'{{PRODUCT}} / STM32L152RC'],['Firmware','{{FW_VERSION}}'],[t.authorInfo,'{{AUTHOR}}'],[t.collabInfo,'Codex (OpenAI), Claude (Anthropic)'],[t.csvRows,cfg.records===undefined?meas.length:cfg.records],[lang==='pl'?'Wolna pami\u0119\u0107':'Free memory',freeMemoryText()]];if(badRecords)di.push([t.badRecords,badRecords]);di.push([t.events,events.length],[t.firstMeas,firstTemp?firstTemp.dt:'-'],[t.lastMeas,lastTemp?lastTemp.dt:'-'],[t.intervalInfo,Number.isFinite(+cfg.interval)?cfg.interval+' s':'-'],[t.thresholdsInfo,unit(+cfg.low)+' \u2026 '+unit(+cfg.high)],[t.unitInfo,cfg.unit?'\u00b0F':'\u00b0C'],[t.tzInfo,devZone.name?devZone.name.replace(/_/g,' ')+' ('+tzFmt(zoneCurOffset())+')':t.tzUnset],[t.tzRuleInfo,ruleText(devZone)]);if(+cfg.alarmDelay)di.push([t.alarmDelayInfo,cfg.alarmDelay+' min']);if(+cfg.vbatMin)di.push([t.vbatMinInfo,(cfg.vbatMin/1000).toFixed(2)+' V'+(cfg.vbatMin<2700?' &mdash; <span class="bad">'+t.vbatLow+'</span>':'')]);if(cfg.reset)di.push([t.resetInfo,resetText(cfg.reset)]);kv('deviceInfo',di);renderMemory();updateGlobalStatus()}
 function workRanges(){let ev=events.filter(r=>Number.isFinite(r.ms)&&(r.code==='R001'||r.code==='R002'||r.code==='R003')).sort((a,b)=>a.ms-b.ms),out=[],on=null;ev.forEach(e=>{if((e.code==='R001'||e.code==='R002')&&on===null)on=e;else if(e.code==='R003'&&on){out.push([on,e]);on=null}});if(on){let end=lastTemp||last||on;out.push([on,end])}
 return out}
 function renderWorkRows(){let e=$('workRows'),t=T();if(!e)return;
@@ -1204,8 +1345,8 @@ let from=rowPage*ROWS_PAGE,part=list.slice(from,from+ROWS_PAGE),cc={},col=c=>cc[
 e.innerHTML=part.length?part.map(r=>{let tr=isTempRow(r),d=tr?outDir(r):'',st=d?' style="color:'+(d==='H'?hiC:loC)+';font-weight:760"':'';return '<tr><td>'+r.seq+'</td><td>'+r.date+'</td><td>'+r.time+'</td><td class="num"'+st+'>'+(tr?fmtTemp(r.t):'—')+'</td><td class="codebadge" style="color:'+col(r.code)+'">'+r.code+'</td><td>'+(r.code==='M000'?'':codeDesc(r.code))+'</td></tr>'}).join(''):'<tr><td colspan="6" class="note">'+t.noData+'</td></tr>';
 setTxt('pageInfo',list.length?(from+1)+'–'+Math.min(list.length,from+ROWS_PAGE)+' / '+list.length:'');$('pageNewer').disabled=rowPage<=0;$('pageOlder').disabled=rowPage>=pages-1}
 function renderAlarmRows(){let e=$('alarmRows');if(!e)return;
-let t=T(),ep=curEpisodes(),hiC=css('--alarm-high'),loC=css('--alarm-low');if(!ep.length){e.innerHTML='<tr><td colspan="6" class="note">'+t.noEpisodes+'</td></tr>';return}
-e.innerHTML=ep.map((x,i)=>{let c=x.dir==='H'?hiC:loC;return '<tr><td>'+(i+1)+'</td><td style="color:'+c+';font-weight:760">'+(x.dir==='H'?'↑ '+t.above:'↓ '+t.below)+'</td><td>'+x.start.dt+'</td><td>'+(x.open?t.ongoing:x.end.dt)+'</td><td>'+durMs(epDur(x))+'</td><td style="color:'+c+';font-weight:760">'+unit(x.peak.t)+'</td></tr>'}).join('')}
+let t=T(),ep=curEpisodes(),hiC=css('--alarm-high'),loC=css('--alarm-low');let sh=curShortEpisodes();if(!ep.length&&!sh.length){e.innerHTML='<tr><td colspan="6" class="note">'+t.noEpisodes+'</td></tr>';return}
+e.innerHTML=ep.map((x,i)=>{let c=x.dir==='H'?hiC:loC;return '<tr><td>'+(i+1)+'</td><td style="color:'+c+';font-weight:760">'+(x.dir==='H'?'↑ '+t.above:'↓ '+t.below)+'</td><td>'+x.start.dt+'</td><td>'+(x.open?t.ongoing:x.end.dt)+'</td><td>'+durMs(epDur(x))+'</td><td style="color:'+c+';font-weight:760">'+unit(x.peak.t)+'</td></tr>'}).join('')+sh.map(x=>'<tr class="shortexc"><td>&ndash;</td><td>'+(x.dir==='H'?'↑ ':'↓ ')+t.shortTag+'</td><td>'+x.start.dt+'</td><td>'+(x.open?t.ongoing:x.end.dt)+'</td><td>'+durMs(epDur(x))+'</td><td>'+unit(x.peak.t)+'</td></tr>').join('')}
 function renderEventRows(){let e=$('eventRows');if(!e)return;
 let ev=currentEvents().filter(r=>r.code[0]!=='T');if(!ev.length){e.innerHTML='
 <tr><td colspan="5" class="note">'+T().noEvents+'</td>
@@ -1213,11 +1354,20 @@ let ev=currentEvents().filter(r=>r.code[0]!=='T');if(!ev.length){e.innerHTML='
 e.innerHTML=(printing?ev:ev.slice(-250).reverse()).map(r=>'
 <tr><td>'+r.seq+'</td><td>'+r.date+'</td><td>'+r.time+'</td><td class="'+codeClass(r.code)+'" style="color:'+codeColor(r.code)+'">'+r.code+'</td><td>'+codeDesc(r.code)+'</td>
 </tr>').join('')}
-function setSerial(v){serialStatus=v;setTxt('serialMsg',v)}
+function setSerial(v){serialStatus=v;let e=$('serialMsg');if(!e)return;e.textContent=v;e.className='note statusmsg '+serialKind(v);e.classList.remove('pop');void e.offsetWidth;e.classList.add('pop')}
+let dtPop=null,dtTm=0,dtRep=0,dtInit=0;
+function dtStop(){clearTimeout(dtTm);clearInterval(dtRep)}
+function dtParse(v){let m=/^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/.exec(v||''),n=new Date();return m?{y:+m[1],mo:+m[2]-1,d:+m[3],h:+m[4],mi:+m[5]}:{y:n.getFullYear(),mo:n.getMonth(),d:n.getDate(),h:n.getHours(),mi:n.getMinutes()}}
+function closePicker(){dtStop();if(dtPop){dtPop.remove();dtPop=null}}
+function initDatePickers(){document.querySelectorAll('input[type=datetime-local]').forEach(i=>{if(i.closest('.dtwrap'))return;let w=document.createElement('span');w.className='dtwrap';i.parentNode.insertBefore(w,i);w.appendChild(i);let b=document.createElement('button');b.type='button';b.className='dtbtn';b.tabIndex=-1;b.setAttribute('aria-label','calendar');b.innerHTML='<svg viewBox="0 0 20 20"><rect x="3" y="4.5" width="14" height="12.5" rx="2.6"/><path d="M3 8.6h14M7 2.8v3.4M13 2.8v3.4"/></svg>';w.appendChild(b);b.onclick=e=>{e.stopPropagation();openPicker(i,w)}});if(dtInit)return;dtInit=1;document.addEventListener('pointerup',dtStop);document.addEventListener('keydown',e=>{if(e.key==='Escape')closePicker()});document.addEventListener('mousedown',e=>{if(dtPop&&!dtPop.contains(e.target)&&!e.target.closest('.dtbtn'))closePicker()},true)}
+function openPicker(inp,w){if(dtPop&&dtPop.parentNode===w){closePicker();return}closePicker();let t=T(),s=dtParse(inp.value),vy=s.y,vm=s.mo,p=n=>String(n).padStart(2,'0'),pop=document.createElement('div');pop.className='dtpop';let draw=()=>{let first=(new Date(vy,vm,1).getDay()+6)%7,days=new Date(vy,vm+1,0).getDate(),now=new Date(),g='';t.wdShort.forEach(x=>g+='<span class="wd">'+x+'</span>');for(let k=0;k<first;k++)g+='<span></span>';for(let d=1;d<=days;d++){let c=[];if(d===s.d&&vm===s.mo&&vy===s.y)c.push('sel');if(d===now.getDate()&&vm===now.getMonth()&&vy===now.getFullYear())c.push('today');g+='<button type="button" data-d="'+d+'" class="'+c.join(' ')+'">'+d+'</button>'}pop.innerHTML='<div class="dthead"><button type="button" data-a="pm">&lsaquo;</button><span>'+t.monthsNom[vm]+' '+vy+'</span><button type="button" data-a="nm">&rsaquo;</button></div><div class="dtgrid">'+g+'</div><div class="dttime"><button type="button" data-a="h-">&minus;</button><b class="dth">'+p(s.h)+'</b><button type="button" data-a="h+">+</button><span class="dtcol">:</span><button type="button" data-a="m-">&minus;</button><b class="dtm">'+p(s.mi)+'</b><button type="button" data-a="m+">+</button></div><div class="dtfoot"><button type="button" data-a="now">'+t.dtNow+'</button><button type="button" class="dtok" data-a="ok">'+t.dtOk+'</button></div>'};let act=a=>{if(a==='pm'){if(--vm<0){vm=11;vy--}draw()}else if(a==='nm'){if(++vm>11){vm=0;vy++}draw()}else if(a==='h-'||a==='h+'){s.h=(s.h+(a==='h+'?1:23))%24;pop.querySelector('.dth').textContent=p(s.h)}else if(a==='m-'||a==='m+'){s.mi=(s.mi+(a==='m+'?1:59))%60;pop.querySelector('.dtm').textContent=p(s.mi)}else if(a==='now'){s=dtParse('');vy=s.y;vm=s.mo;draw()}else if(a==='ok'){let v=s.y+'-'+p(s.mo+1)+'-'+p(s.d)+'T'+p(s.h)+':'+p(s.mi);if(inp.min&&v<inp.min.slice(0,16))v=inp.min.slice(0,16);if(inp.max&&v>inp.max.slice(0,16))v=inp.max.slice(0,16);inp.value=v;inp.dispatchEvent(new Event('input',{bubbles:true}));inp.dispatchEvent(new Event('change',{bubbles:true}));closePicker()}};pop.addEventListener('pointerdown',e=>{let b=e.target.closest('button');if(!b)return;e.preventDefault();if(b.dataset.d){s.y=vy;s.mo=vm;s.d=+b.dataset.d;draw();return}let a=b.dataset.a;act(a);if(/^[hm][+-]$/.test(a))dtTm=setTimeout(()=>{dtRep=setInterval(()=>act(a),75)},420)});draw();w.appendChild(pop);dtPop=pop}
+function initSteppers(){document.querySelectorAll('#tab-usb input[type=number]').forEach(i=>{if(i.closest('.stepper'))return;let w=document.createElement('span');w.className='stepper';i.parentNode.insertBefore(w,i);w.appendChild(i);[['stepDown','down','\u2212'],['stepUp','up','+']].forEach(([f,c,s])=>{let b=document.createElement('button'),tm=0,rep=0;b.type='button';b.className='stepbtn '+c;b.tabIndex=-1;b.textContent=s;b.setAttribute('aria-label',s);let go=()=>{try{i[f]()}catch(e){}i.dispatchEvent(new Event('input',{bubbles:true}));i.dispatchEvent(new Event('change',{bubbles:true}))},stop=()=>{clearTimeout(tm);clearInterval(rep)};b.addEventListener('pointerdown',e=>{e.preventDefault();go();tm=setTimeout(()=>{rep=setInterval(go,70)},420)});['pointerup','pointerleave','pointercancel'].forEach(n=>b.addEventListener(n,stop));w.appendChild(b)})})}
+function serialKind(v){let t=T(),s=String(v||'');if(s.startsWith(t.serialFail)||s===t.serialNoAnswer||s===t.serialNo||s===t.timeRejected||s===t.usbReportBlocked)return 'bad';if(s===t.loggerOffArmed||s===t.serialPick)return 'warn';if(s===t.serialYes)return 'info';return 'ok'}
+function askConfirm(msg,yes,danger){return new Promise(done=>{let m=$('askModal'),box=$('askText'),t=T();box.textContent='';String(msg).split('\n').filter(Boolean).forEach(s=>{let p=document.createElement('p');p.textContent=s;box.appendChild(p)});$('askYes').textContent=yes||t.askOk;$('askNo').textContent=t.askCancel;m.classList.toggle('danger',!!danger);m.hidden=false;let end=r=>{m.hidden=true;document.removeEventListener('keydown',key);done(r)},key=e=>{if(e.key==='Escape')end(false)};$('askYes').onclick=()=>end(true);$('askNo').onclick=()=>end(false);m.onclick=e=>{if(e.target===m)end(false)};document.addEventListener('keydown',key);setTimeout(()=>$('askNo').focus(),30)})}
 function setSerialLog(v){let e=$('serialLog');if(e)e.value=v}
 function setLangButton(t){let e=$('langBtn');if(e)e.innerHTML='<span class="flag '+t.nextFlag+'"></span>'+t.toLang}
 function renderStatic(){let t=T();
-document.documentElement.lang=lang;setTxt('subtitle',t.subtitle);setTxt('createdLabel',t.created);setTxt('createdAt',localDate());setTxt('generatePdfBtn',t.generatePdf);setTxt('reportModeShort',t.reportShort);setTxt('reportModeStandard',t.reportStandard);setTxt('reportModeFull',t.reportFull);setLangButton(t);setUnitButton();setTxt('tabReportBtn',t.report);setTxt('tabChartBtn',t.chart);setTxt('tabDataBtn',t.data);setTxt('tabDeviceBtn',t.device);setTxt('tabUsbBtn',t.usb);setTxt('chartTitle',t.chartTitle);setTxt('runTitle',t.runTitle);setTxt('chartBigTitle',t.chartBig);setTxt('fromLabel',t.from);setTxt('toLabel',t.to);setTxt('presetCustom',t.presetCustom);setTxt('credits',t.credits);setTxt('signNotes',t.signNotes);setTxt('groupTimeTitle',t.groupTime);setTxt('cfgTzLabel',t.tzLabel);setTxt('cfgDstModeLabel',t.dstModeLabel);setTxt('dstAuto',t.dstAuto);setTxt('dstManual',t.dstManual);setTxt('dstOff',t.dstOffOpt);setTxt('cfgClockLabel',t.clockLabel);setTxt('dstStartLabel',t.dstStartLabel);setTxt('dstEndLabel',t.dstEndLabel);setTxt('syncClockBtn',t.syncClock);setTxt('clockOnSaveLabel',t.clockOnSave);setTxt('clockSrcPc',t.clockSrcPc);setTxt('clockSrcManual',t.clockSrcManual);renderDevClock();renderTzBadge();if($('dsW1')&&$('dsW1').options.length){[['dsW',t.weeks],['dsD',t.weekdays],['dsM',t.months]].forEach(x=>[1,2].forEach(i=>[...$(x[0]+i).options].forEach((o,j)=>o.textContent=x[1][j])));renderTzPreview()}setTxt('signBy',t.signBy);setTxt('noteTitle',t.noteTitle);setTxt('noteHint',t.noteHint);setTxt('dlgCancel',t.cancel);setTxt('dlgPrint',t.generatePdf);setTxt('noteLabel',t.noteLabel);setTxt('checkedByLabel',t.checkedByLabel);setTxt('memLabel',t.memLabel);setTxt('rangeReset',t.reset);setTxt('chartNote',t.chartNote);setTxt('dataTitle',t.data);setTxt('dataNote',t.dataNote);setTxt('runDataTitle',t.runTitle);setTxt('workRangesTitle',t.workRanges);setTxt('rangeStartHead',t.rangeStart);setTxt('rangeEndHead',t.rangeEnd);setTxt('rangeDurHead',t.rangeDuration);setTxt('alarmEventsTitle',t.alarmsTitle);setTxt('alarmEventsNote',t.alarmEventsNote);setTxt('alarmDateHead',t.date);setTxt('alarmTimeHead',t.time);setTxt('alarmCodeHead',t.code);setTxt('alarmDescHead',t.eventDesc);setTxt('eventsTitle',t.eventsTitle);setTxt('eventsNote',t.eventsNote);setTxt('measurementsTitle',t.rowsTitle);setTxt('eventDateHead',t.date);setTxt('eventTimeHead',t.time);setTxt('eventCodeHead',t.code);setTxt('eventDescHead',t.eventDesc);setTxt('deviceTitle',t.deviceTitle);setTxt('usbTitle',t.usbTitle);setTxt('rtcLabel',t.rtc);setTxt('serialBtn',t.connect);setTxt('readCfgBtn',t.readCfg);setTxt('sendBtn',t.send);setTxt('loggerUsbTitle',t.loggerUsb);setTxt('loggerStatusBtn',t.loggerStatus);setTxt('powerStatusBtn',t.powerStatus);setTxt('loggerStartBtn',t.loggerStart);setTxt('loggerPauseBtn',t.loggerPause);setTxt('loggerClearBtn',t.loggerClear);setTxt('loggerOffBtn',t.loggerOff);setTxt('cfgClockModeLabel',t.clockModeLabel);setTxt('cfgClockModeOff',t.off);setTxt('cfgClockModeOn',t.on);setTxt('cfgEcoModeLabel',t.ecoModeLabel);setTxt('cfgEcoModeOff',t.off);setTxt('cfgEcoModeOn',t.on);setTxt('serialLogLabel',t.serialLog);setTxt('dateHead',t.date);setTxt('timeHead',t.time);setTxt('tempHead','Temp. '+unitLabel());setTxt('codeHead',t.code);setTxt('themeBtn',document.body.classList.contains('dark')?t.light:t.dark);setTxt('cfgIntervalLabel',t.intervalLabel);setTxt('cfgLowLabel',t.lowLabel);setTxt('cfgHighLabel',t.highLabel);setTxt('cfgBatteryLabel',t.batteryLabel);setTxt('cfgUsbModeLabel',t.usbModeLabel);setTxt('cfgUsbLogging',t.usbLogging);setTxt('cfgUsbReport',t.usbReport);setTxt('cfgLcdLabel',t.lcdLabel);renderLcdLabels();setTxt('cfgLedLabel',t.ledLabel);setTxt('cfgUnitLabel',t.unitCfgLabel);setTxt('configPreviewLabel',t.preview);setTxt('cfgBatteryOff',t.off);setTxt('cfgBatteryOn',t.on);setTxt('cfgLedOff',t.off);setTxt('cfgLedOn',t.on);setTxt('groupMeasureTitle',t.groupMeasure);setTxt('groupDisplayTitle',t.groupDisplay);setTxt('groupPowerTitle',t.groupPower);setTxt('techDetailsTitle',t.techDetails);setTxt('menuNote',t.menuNote);setTxt('episodeSumTitle',t.episodes);setTxt('epTypeHead',t.epType);setTxt('epStartHead',t.epStart);setTxt('epEndHead',t.epEnd);setTxt('epDurHead',t.epDur);setTxt('epPeakHead',t.epPeak);setTxt('preset7d',t.preset7d);setTxt('filterAll',t.filterAll);setTxt('filterOut',t.filterOut);setTxt('filterEv',t.filterEv);setTxt('pageNewer',t.newer);setTxt('pageOlder',t.older);setTxt('csvBtn',t.csv);setTxt('rowDescHead',t.eventDesc);if(!serialStatus)setSerial(('serial' in navigator)?t.serialYes:t.serialNo);else setTxt('serialMsg',serialStatus);updateRangeInfo();renderConfigText()}
+document.documentElement.lang=lang;setTxt('subtitle',t.subtitle);setTxt('createdLabel',t.created);setTxt('createdAt',localDate());setTxt('generatePdfBtn',t.generatePdf);setTxt('reportModeShort',t.reportShort);setTxt('reportModeStandard',t.reportStandard);setTxt('reportModeFull',t.reportFull);setLangButton(t);setUnitButton();setTxt('tabReportBtn',t.report);setTxt('tabChartBtn',t.chart);setTxt('tabDataBtn',t.data);setTxt('tabDeviceBtn',t.device);setTxt('tabUsbBtn',t.usb);setTxt('chartTitle',t.chartTitle);setTxt('runTitle',t.runTitle);setTxt('chartBigTitle',t.chartBig);setTxt('fromLabel',t.from);setTxt('toLabel',t.to);setTxt('presetCustom',t.presetCustom);setTxt('credits',t.credits);setTxt('signNotes',t.signNotes);setTxt('groupTimeTitle',t.groupTime);setTxt('cfgTzLabel',t.tzLabel);setTxt('cfgDstModeLabel',t.dstModeLabel);setTxt('dstAuto',t.dstAuto);setTxt('dstManual',t.dstManual);setTxt('dstOff',t.dstOffOpt);setTxt('cfgClockLabel',t.clockLabel);setTxt('dstStartLabel',t.dstStartLabel);setTxt('dstEndLabel',t.dstEndLabel);setTxt('syncClockBtn',t.syncClock);setTxt('clockOnSaveLabel',t.clockOnSave);setTxt('clockSrcPc',t.clockSrcPc);setTxt('clockSrcManual',t.clockSrcManual);renderDevClock();renderTzBadge();if($('dsW1')&&$('dsW1').options.length){[['dsW',t.weeks],['dsD',t.weekdays],['dsM',t.months]].forEach(x=>[1,2].forEach(i=>[...$(x[0]+i).options].forEach((o,j)=>o.textContent=x[1][j])));renderTzPreview()}setTxt('signBy',t.signBy);setTxt('noteTitle',t.noteTitle);setTxt('noteHint',t.noteHint);setTxt('dlgCancel',t.cancel);setTxt('dlgPrint',t.generatePdf);setTxt('noteLabel',t.noteLabel);setTxt('checkedByLabel',t.checkedByLabel);setTxt('memLabel',t.memLabel);setTxt('rangeReset',t.reset);setTxt('chartNote',t.chartNote);setTxt('dataTitle',t.data);setTxt('dataNote',t.dataNote);setTxt('runDataTitle',t.runTitle);setTxt('workRangesTitle',t.workRanges);setTxt('rangeStartHead',t.rangeStart);setTxt('rangeEndHead',t.rangeEnd);setTxt('rangeDurHead',t.rangeDuration);setTxt('alarmEventsTitle',t.alarmsTitle);setTxt('alarmEventsNote',t.alarmEventsNote);setTxt('alarmDateHead',t.date);setTxt('alarmTimeHead',t.time);setTxt('alarmCodeHead',t.code);setTxt('alarmDescHead',t.eventDesc);setTxt('eventsTitle',t.eventsTitle);setTxt('eventsNote',t.eventsNote);setTxt('measurementsTitle',t.rowsTitle);setTxt('eventDateHead',t.date);setTxt('eventTimeHead',t.time);setTxt('eventCodeHead',t.code);setTxt('eventDescHead',t.eventDesc);setTxt('deviceTitle',t.deviceTitle);setTxt('usbTitle',t.usbTitle);setTxt('rtcLabel',t.rtc);setTxt('serialBtn',t.connect);setTxt('readCfgBtn',t.readCfg);setTxt('sendBtn',t.send);setTxt('loggerUsbTitle',t.loggerUsb);setTxt('loggerStatusBtn',t.loggerStatus);setTxt('powerStatusBtn',t.powerStatus);setTxt('loggerStartBtn',t.loggerStart);setTxt('loggerPauseBtn',t.loggerPause);setTxt('loggerClearBtn',t.loggerClear);setTxt('loggerOffBtn',t.loggerOff);setTxt('cfgAlarmDelayLabel',t.alarmDelayLabel);setTxt('startDelayLabel',t.startLabel);setTxt('startNowOpt',t.startNow);setTxt('startInOpt',t.startIn);setTxt('startAtOpt',t.startAt);setTxt('cfgClockModeLabel',t.clockModeLabel);setTxt('cfgClockModeOff',t.off);setTxt('cfgClockModeOn',t.on);setTxt('cfgEcoModeLabel',t.ecoModeLabel);setTxt('cfgEcoModeOff',t.off);setTxt('cfgEcoModeOn',t.on);setTxt('serialLogLabel',t.serialLog);setTxt('dateHead',t.date);setTxt('timeHead',t.time);setTxt('tempHead','Temp. '+unitLabel());setTxt('codeHead',t.code);setTxt('themeBtn',document.body.classList.contains('dark')?t.light:t.dark);setTxt('cfgIntervalLabel',t.intervalLabel);setTxt('cfgLowLabel',t.lowLabel);setTxt('cfgHighLabel',t.highLabel);setTxt('cfgBatteryLabel',t.batteryLabel);setTxt('cfgUsbModeLabel',t.usbModeLabel);setTxt('cfgUsbLogging',t.usbLogging);setTxt('cfgUsbReport',t.usbReport);setTxt('cfgLcdLabel',t.lcdLabel);renderLcdLabels();setTxt('cfgLedLabel',t.ledLabel);setTxt('cfgUnitLabel',t.unitCfgLabel);setTxt('configPreviewLabel',t.preview);setTxt('cfgBatteryOff',t.off);setTxt('cfgBatteryOn',t.on);setTxt('cfgLedOff',t.off);setTxt('cfgLedOn',t.on);setTxt('groupMeasureTitle',t.groupMeasure);setTxt('groupDisplayTitle',t.groupDisplay);setTxt('groupPowerTitle',t.groupPower);setTxt('techDetailsTitle',t.techDetails);setTxt('menuNote',t.menuNote);setTxt('episodeSumTitle',t.episodes);setTxt('epTypeHead',t.epType);setTxt('epStartHead',t.epStart);setTxt('epEndHead',t.epEnd);setTxt('epDurHead',t.epDur);setTxt('epPeakHead',t.epPeak);setTxt('preset7d',t.preset7d);setTxt('filterAll',t.filterAll);setTxt('filterOut',t.filterOut);setTxt('filterEv',t.filterEv);setTxt('pageNewer',t.newer);setTxt('pageOlder',t.older);setTxt('csvBtn',t.csv);setTxt('rowDescHead',t.eventDesc);if(!serialStatus)setSerial(('serial' in navigator)?t.serialYes:t.serialNo);else setTxt('serialMsg',serialStatus);updateRangeInfo();renderConfigText()}
 function renderAllText(){renderStatic();renderTzBadge();renderVerdict();renderSummary();renderEpisodeSummary();renderInfo();renderWorkRows();renderRows();renderAlarmRows();renderEventRows();renderCodeLegend()}
 function css(n){return getComputedStyle(document.body).getPropertyValue(n).trim()}
 function el(n,a,t){let e=document.createElementNS('http://www.w3.org/2000/svg',n);for(let k in a)e.setAttribute(k,a[k]);if(t!==undefined)e.textContent=t;return e}
@@ -1348,7 +1498,7 @@ function renderLcdLabels(){let names=lcdMenuLabels[lang]||lcdMenuLabels.pl;setTx
 function lcdMenuMask(){let mask=1;for(let i=1;i<17;i++)if($('cfgMenu'+i)&&$('cfgMenu'+i).checked)mask|=1<<i;return mask}
 function syncLcdMenu(){let mask=lcdMenuMask(),select=$('cfgLcd');Array.from(select.options).forEach(o=>o.disabled=!(mask&(1<<Number(o.value))));if(!(mask&(1<<Number(select.value))))select.value='0'}
 function setLcdMenu(value){let mask=(Number(value)&131071)|1;for(let i=0;i<17;i++)if($('cfgMenu'+i))$('cfgMenu'+i).checked=!!(mask&(1<<i));syncLcdMenu()}
-function readCfg(){let c={interval:Math.max(1,Math.min(600,Math.round(nval('cfgInterval',cfg.interval||60)))),low:nval('cfgLow',cfg.low),high:nval('cfgHigh',cfg.high),battery:+nval('cfgBattery',cfg.battery?1:0),usbLogging:+nval('cfgUsbMode',cfg.usbLogging!==0?1:0),lcd:Math.max(0,Math.min(12,Math.round(nval('cfgLcd',cfg.lcd||0)))),menu:lcdMenuMask(),led:+nval('cfgLed',cfg.led?1:0),clockMode:+nval('cfgClockMode',cfg.clockMode?1:0),ecoMode:+nval('cfgEcoMode',cfg.ecoMode?1:0),unit:+nval('cfgUnit',cfg.unit?1:0)};if(c.low>=c.high)c.high=c.low+1;return c}
+function readCfg(){let c={interval:Math.max(1,Math.min(600,Math.round(nval('cfgInterval',cfg.interval||60)))),low:nval('cfgLow',cfg.low),high:nval('cfgHigh',cfg.high),battery:+nval('cfgBattery',cfg.battery?1:0),usbLogging:+nval('cfgUsbMode',cfg.usbLogging!==0?1:0),lcd:Math.max(0,Math.min(12,Math.round(nval('cfgLcd',cfg.lcd||0)))),menu:lcdMenuMask(),led:+nval('cfgLed',cfg.led?1:0),alarmDelay:Math.max(0,Math.min(240,Math.round(nval('cfgAlarmDelay',cfg.alarmDelay||0)))),clockMode:+nval('cfgClockMode',cfg.clockMode?1:0),ecoMode:+nval('cfgEcoMode',cfg.ecoMode?1:0),unit:+nval('cfgUnit',cfg.unit?1:0)};if(c.low>=c.high)c.high=c.low+1;return c}
 ## Zone list and rules come from the browser (Intl); the device only stores offset + yearly rules.
 function zoneOffsetNow(zone,ms){try{let s=new Intl.DateTimeFormat('en-US',{timeZone:zone,timeZoneName:'longOffset'}).formatToParts(new Date(ms)).find(x=>x.type==='timeZoneName').value,m=/GMT([+-])(\d\d):?(\d\d)?/.exec(s);return m?(m[1]==='-'?-1:1)*((+m[2])*60+(+(m[3]||0))):0}catch(e){return 0}}
 function zoneRule(zone){let y=new Date().getUTCFullYear(),t0=Date.UTC(y,0,1),tr=[],prev=zoneOffsetNow(zone,t0);for(let d=1;d<=366;d++){let ms=t0+d*86400000,o=zoneOffsetNow(zone,ms);if(o!==prev){let lo=ms-86400000,hi=ms;while(hi-lo>60000){let mid=lo+Math.floor((hi-lo)/120000)*60000;if(zoneOffsetNow(zone,mid)===prev)lo=mid;else hi=mid}tr.push({ms:hi,from:prev,to:o});prev=o}}
@@ -1369,10 +1519,10 @@ sel.onchange=()=>{if($('cfgDstMode').value!=='manual')fillRuleUi(zoneRule(sel.va
 ## Fills the fields only; "Zapisz w urządzeniu" sends settings, zone and (when ticked) the clock together.
 $('syncClockBtn').onclick=()=>{sel.value=pc;setVal('cfgDstMode','auto');fillRuleUi(zoneRule(pc));setVal('cfgClock',clockLocalNow(uiZone()));$('clockOnSave').checked=true;setVal('clockSource','pc');renderTzPreview();renderConfigText()};$('cfgClock').oninput=()=>{$('clockOnSave').checked=true;setVal('clockSource','manual')};renderTzPreview();renderDevClock();}
 function tzLines(){let z=uiZone(),r=x=>x.join('.');return ['tz_name='+z.name,'tz_offset_min='+z.std,'tz_dst_min='+z.dst,'tz_dst_start='+r(z.start),'tz_dst_end='+r(z.end)];}
-function configText(c){return ['# {{PRODUCT}} CONFIG.TXT','interval_seconds='+c.interval,'temperature_low_c='+c.low.toFixed(3),'temperature_high_c='+c.high.toFixed(3),'battery_mode='+c.battery,'usb_logging='+c.usbLogging,'lcd_mode='+c.lcd,'lcd_menu_mask='+c.menu,'led_enable='+c.led,'clock_mode='+c.clockMode,'eco_mode='+c.ecoMode,'temperature_unit='+(c.unit?'F':'C')].concat(tzLines()).concat(['# Web Serial payload uses the same values.']).join('\n')+'\n'}
+function configText(c){return ['# {{PRODUCT}} CONFIG.TXT','interval_seconds='+c.interval,'temperature_low_c='+c.low.toFixed(3),'temperature_high_c='+c.high.toFixed(3),'battery_mode='+c.battery,'usb_logging='+c.usbLogging,'lcd_mode='+c.lcd,'lcd_menu_mask='+c.menu,'led_enable='+c.led,'alarm_delay_min='+c.alarmDelay,'clock_mode='+c.clockMode,'eco_mode='+c.ecoMode,'temperature_unit='+(c.unit?'F':'C')].concat(tzLines()).concat(['# Web Serial payload uses the same values.']).join('\n')+'\n'}
 function renderConfigText(){let e=$('configText');if(e)e.value=configText(readCfg())}
 function serialPayload(timeUtc){let c=readCfg(),p=['PING'];if(timeUtc)p.push('SET TIME '+timeUtc);p.push('CONFIG BEGIN');configText(c).split('\n').filter(l=>l&&l[0]!=='#').forEach(l=>p.push(l));p.push('CONFIG END');return p.join('\n')+'\n'}
-function initConfig(){initTimeUi();setVal('cfgInterval',cfg.interval);setVal('cfgLow',cfg.low);setVal('cfgHigh',cfg.high);setVal('cfgBattery',cfg.battery?1:0);setVal('cfgUsbMode',cfg.usbLogging!==0?1:0);setVal('cfgLcd',cfg.lcd||0);setLcdMenu(cfg.lcdMenu===undefined?131071:cfg.lcdMenu);for(let i=1;i<17;i++)if($('cfgMenu'+i))$('cfgMenu'+i).onchange=()=>{syncLcdMenu();renderConfigText()};setVal('cfgLed',cfg.led?1:0);setVal('cfgClockMode',cfg.clockMode?1:0);setVal('cfgEcoMode',cfg.ecoMode?1:0);setVal('cfgUnit',cfg.unit?1:0);['cfgInterval','cfgLow','cfgHigh','cfgBattery','cfgUsbMode','cfgLcd','cfgLed','cfgClockMode','cfgEcoMode','cfgUnit'].forEach(id=>{let e=$(id);if(e){e.oninput=renderConfigText;e.onchange=renderConfigText}});$('serialBtn').onclick=async()=>{if(await connectSerial())await readDeviceConfig()};$('readCfgBtn').onclick=readDeviceConfig;$('sendBtn').onclick=sendConfig;$('loggerStatusBtn').onclick=()=>sendLogger('LOGGER STATUS');$('powerStatusBtn').onclick=()=>sendLogger('GET POWER');$('loggerStartBtn').onclick=()=>sendLogger('LOGGER START');$('loggerPauseBtn').onclick=()=>sendLogger('LOGGER PAUSE');$('loggerClearBtn').onclick=()=>{if(confirm(T().loggerClearAsk))sendLogger('LOGGER CLEAR CONFIRM')};$('loggerOffBtn').onclick=async()=>{let t=T();if(!confirm(t.loggerOffAsk))return;try{await serialWrite('POWER OFF\n');let a=await serialRead(1500,/(OK POWER OFF|ERR [^\n]*)\n/);setSerialLog(('POWER OFF\n---\n'+(a||t.serialNoAnswer)).trim());if(/OK POWER OFF/.test(a||'')){setSerial(t.loggerOffArmed);await serialWrite('LOGGER STATUS\n');let s=await serialRead(1500,/LOGGER STATUS[^\n]*\n/);if(s)applyLoggerStateResponse(s,'LOGGER STATUS')}else setSerial(a?t.serialFail:t.serialNoAnswer)}catch(e){setSerial(t.serialFail+': '+e.message)}};renderConfigText()}
+function initConfig(){initTimeUi();initSteppers();initDatePickers();setVal('cfgInterval',cfg.interval);setVal('cfgLow',cfg.low);setVal('cfgHigh',cfg.high);setVal('cfgBattery',cfg.battery?1:0);setVal('cfgUsbMode',cfg.usbLogging!==0?1:0);setVal('cfgLcd',cfg.lcd||0);setLcdMenu(cfg.lcdMenu===undefined?131071:cfg.lcdMenu);for(let i=1;i<17;i++)if($('cfgMenu'+i))$('cfgMenu'+i).onchange=()=>{syncLcdMenu();renderConfigText()};setVal('cfgLed',cfg.led?1:0);setVal('cfgAlarmDelay',cfg.alarmDelay||0);setVal('cfgClockMode',cfg.clockMode?1:0);setVal('cfgEcoMode',cfg.ecoMode?1:0);setVal('cfgUnit',cfg.unit?1:0);['cfgInterval','cfgLow','cfgHigh','cfgAlarmDelay','cfgBattery','cfgUsbMode','cfgLcd','cfgLed','cfgClockMode','cfgEcoMode','cfgUnit'].forEach(id=>{let e=$(id);if(e){e.oninput=renderConfigText;e.onchange=renderConfigText}});$('serialBtn').onclick=async()=>{if(await connectSerial())await readDeviceConfig()};$('readCfgBtn').onclick=readDeviceConfig;$('sendBtn').onclick=sendConfig;$('loggerStatusBtn').onclick=()=>sendLogger('LOGGER STATUS');$('powerStatusBtn').onclick=()=>sendLogger('GET POWER');$('startDelayMode').onchange=()=>{let m=$('startDelayMode').value;$('startDelayMin').hidden=m!=='in';$('startDelayAt').hidden=m!=='at'};$('loggerStartBtn').onclick=async()=>{let m=$('startDelayMode').value,cmd='LOGGER START';if(m==='in'){let n=Math.round(+$('startDelayMin').value);if(!(n>0))return;cmd='LOGGER START IN '+n*60}else if(m==='at'){let u=clockToUtc($('startDelayAt').value,uiZone());if(!Number.isFinite(u))return;cmd='LOGGER START AT '+utcStamp(u)}await sendLogger(cmd);if(m!=='now'){try{await serialWrite('LOGGER STATUS\n');let s=await serialRead(1500,/LOGGER STATUS[^\n]*\n/);if(s)applyLoggerStateResponse(s,'LOGGER STATUS')}catch(e){}}};$('loggerPauseBtn').onclick=()=>sendLogger('LOGGER PAUSE');$('loggerClearBtn').onclick=async()=>{let t=T();if(!(await askConfirm(t.loggerClearAsk,t.askClearYes,1)))return;try{if(!(await serialWrite('LOGGER CLEAR CONFIRM\n')))return;let a=await serialRead(5000,/(OK LOGGER CLEAR|ERR [^\n]*)\n/);setSerialLog(('LOGGER CLEAR CONFIRM\n---\n'+(a||t.serialNoAnswer)).trim());if(!/OK LOGGER CLEAR/.test(a||'')){setSerial(a?t.serialFail:t.serialNoAnswer);return}applyLoggerStateResponse(a,'LOGGER CLEAR CONFIRM');setSerial(t.clearedRestart);try{let p=serialPort;serialPort=null;if(p)await p.close()}catch(e){}setTimeout(()=>location.reload(),8000)}catch(e){setSerial(t.serialFail+': '+e.message)}};$('loggerOffBtn').onclick=async()=>{let t=T();if(!(await askConfirm(t.loggerOffAsk,t.askOffYes,0)))return;try{await serialWrite('POWER OFF\n');let a=await serialRead(1500,/(OK POWER OFF|ERR [^\n]*)\n/);setSerialLog(('POWER OFF\n---\n'+(a||t.serialNoAnswer)).trim());if(/OK POWER OFF/.test(a||'')){setSerial(t.loggerOffArmed);await serialWrite('LOGGER STATUS\n');let s=await serialRead(1500,/LOGGER STATUS[^\n]*\n/);if(s)applyLoggerStateResponse(s,'LOGGER STATUS')}else setSerial(a?t.serialFail:t.serialNoAnswer)}catch(e){setSerial(t.serialFail+': '+e.message)}};renderConfigText()}
 function setVal(id,v){let e=$(id);if(e)e.value=v}
 ## Device clock read with GET TIME, then ticked locally once a second (24 h, zone local time).
 let devClock=null,devClockTimer=0;
@@ -1394,7 +1544,7 @@ return out.trim()}
 function applyConfigResponse(s){let ok=0;s.split(/\r?\n/).forEach(l=>{let m=l.match(/^([a-z_]+)=(.+)$/);if(!m)return;
 let k=m[1],v=m[2].trim();if(k==='interval_seconds'){setVal('cfgInterval',v);ok=1}
 else if(k==='temperature_low_c'){setVal('cfgLow',v);ok=1}
-else if(k==='temperature_high_c'){setVal('cfgHigh',v);ok=1}
+else if(k==='temperature_high_c'){setVal('cfgHigh',v);ok=1}else if(k==='alarm_delay_min'){setVal('cfgAlarmDelay',v);ok=1}
 else if(k==='battery_mode'){setVal('cfgBattery',v);ok=1}
 else if(k==='usb_logging'){setVal('cfgUsbMode',v);ok=1}
 else if(k==='lcd_mode'){setVal('cfgLcd',v);ok=1}
@@ -1412,7 +1562,8 @@ let a=await serialRead(4000,/^OK CONFIG\r?$/m);if(a)setSerialLog(payload+'\n---\
 let s=await serialRead(1500,/LOGGER STATUS[^\n]*\n/);if(s){applyLoggerStateResponse(s,'LOGGER STATUS');setSerialLog(payload+'\n---\n'+a+'\n'+s)}}
 else setSerial(a?t.serialFail:t.serialNoAnswer)}
 catch(e){setSerial(t.serialFail+': '+e.message)}}
-function applyLoggerStateResponse(a,cmd){if(/\boff=ARMED\b/.test(a||''))setSerial(T().loggerOffArmed);let count=(a||'').match(/\brecords=(\d+)\b/);if(count)cfg.records=Number(count[1]);else if(/^OK LOGGER CLEAR/m.test(a||''))cfg.records=0;
+function setStartWait(s){let e=$('startWaitInfo');if(!e)return;if(!s){e.textContent='';return}let ms=Date.parse(s.replace(' ','T')+'Z'),off=tzOffsetAt(devZone,ms)||0,d=new Date(ms+off*60000),p=n=>String(n).padStart(2,'0');e.textContent=T().startWaiting+': '+p(d.getUTCDate())+'.'+p(d.getUTCMonth()+1)+'.'+d.getUTCFullYear()+' '+p(d.getUTCHours())+':'+p(d.getUTCMinutes())}
+function applyLoggerStateResponse(a,cmd){if(/LOGGER STATUS/.test(a||'')){let w=(a||'').match(/\bstart_at=(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)/);setStartWait(w?w[1]:'')}else if(/^OK LOGGER (START|PAUSE|CLEAR)/m.test(a||''))setStartWait('');if(/\boff=ARMED\b/.test(a||''))setSerial(T().loggerOffArmed);let count=(a||'').match(/\brecords=(\d+)\b/);if(count)cfg.records=Number(count[1]);else if(/^OK LOGGER CLEAR/m.test(a||''))cfg.records=0;
 let m=(a||'').match(/\blogger=(LOGGING|STOPPED|IDLE|ERROR)\b/),next=m?(m[1]==='LOGGING'?'RUN':(m[1]==='STOPPED'||m[1]==='ERROR'?'STOP':'READY')):'';if(!next&&/^OK LOGGER START/m.test(a||''))next='RUN';if(!next&&/^OK LOGGER PAUSE/m.test(a||''))next='STOP';if(!next&&/^OK LOGGER CLEAR/m.test(a||''))next='READY';if(next){state=next;if(next==='STOP'&&cmd==='LOGGER PAUSE')liveStopDate=currentDateTime();else if(next!=='STOP')liveStopDate='';renderInfo()}}
 async function sendLogger(cmd){let t=T();try{setSerialLog(cmd+'\n');await serialWrite(cmd+'\n');
 let a=await serialRead(1200);setSerialLog((cmd+'\n---\n'+(a||t.serialNoAnswer)).trim());if(a)applyLoggerStateResponse(a,cmd);setSerial(a.includes('ERR E007')?t.usbReportBlocked:(a.includes('ERR ')?t.serialFail:(a?t.loggerSent:t.serialNoAnswer)))}

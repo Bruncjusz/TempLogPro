@@ -49,6 +49,18 @@ void templogpro_diag_boot_capture_reset(void)
     g_boot_capture_done = 1u;
 }
 
+uint32_t templogpro_diag_bkp_read(uint32_t index)
+{
+    return REG32(0x40002850u + (index * 4u));
+}
+
+void templogpro_diag_bkp_write(uint32_t index, uint32_t value)
+{
+    RCC_APB1ENR_REG |= RCC_APB1ENR_PWREN_BIT;
+    PWR_CR_REG |= PWR_CR_DBP_BIT;
+    REG32(0x40002850u + (index * 4u)) = value;
+}
+
 void templogpro_diag_flash_op_begin(uint32_t op)
 {
     RCC_APB1ENR_REG |= RCC_APB1ENR_PWREN_BIT;

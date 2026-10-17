@@ -163,6 +163,13 @@ zakres widoczny na wykresie.
   czasu objętego pomiarami.
 - **Brak danych** — przerwa dłuższa niż 20 interwałów / 10 min albo cofnięcie
   zegara.
+- **Opóźnienie alarmu** (`alarmDelay`) — przekroczenia krótsze niż opóźnienie są
+  „krótkimi wyjściami”: nie wchodzą do werdyktu, kafelków i czasu poza
+  zakresem, w tabeli są szare. Firmware stosuje tę samą regułę do X i czerwonej
+  diody (zatrzask w `RTC_BKP4R`, kasowany przy CLR i nowym starcie); kody
+  `T001` w `DATA.CSV` zostają bez zmian.
+- **Najniższe napięcie baterii** (`vbatMin`) — minimum VDD od startu urządzenia,
+  gdy pracowało na baterii; poniżej 2,7 V raport zaleca wymianę.
 
 ---
 
@@ -219,6 +226,7 @@ nieaktualną, więc przerwany zapis zostawia poprzednie ustawienia.
 | `usb_logging` | 0/1 | 1 = pomiary także na USB, 0 = USB tylko do raportów (START odmawia `E007`) |
 | `lcd_mode` | 0–12 | ekran po starcie |
 | `lcd_menu_mask` | 0–131071 | widoczne ekrany (bit 0 zawsze, bit 12 = zegar, 13 = OFF, 14 = tryb zegarka, 15 = diody, 16 = eco; bity 13 i 14 nieużywane - dawne karty OFF i trybu zegarka) |
+| `alarm_delay_min` | 0–240 | opóźnienie alarmu: X / czerwona dioda / przekroczenie w raporcie dopiero po tylu minutach ciągłego wyjścia poza zakres (bajt 57 konfiguracji) |
 | `eco_mode` | 0/1 | tryb eco: na baterii po 10 s bezczynności LCD całkiem wyłączone, bez serca i diod; budzenie tylko na pomiar |
 | `led_enable` | 0/1 | diody |
 | `clock_mode` | 0/1 | tryb zegarka: zatrzymany logger na baterii pokazuje H:MM (bajt 60 konfiguracji; starsze zapisy mają tam 0) |
@@ -270,11 +278,14 @@ GET CONFIG                -> CONFIG BEGIN ... CONFIG END
 GET POWER                 -> POWER STATUS ...
 GET TIME                  -> TIME utc=YYYY-MM-DD HH:MM:SS local=YYYY-MM-DD HH:MM:SS offset=+120
 LOGGER STATUS             -> LOGGER STATUS app=RUN logger=LOGGING records=... capacity=... interval=... min=... max=... avg=...
-LOGGER START | LOGGER PAUSE
-LOGGER CLEAR CONFIRM      (samo LOGGER CLEAR jest odrzucane, E006)
+LOGGER START | LOGGER PAUSE  (PAUSE anuluje też oczekiwanie na opóźniony start)
+LOGGER START IN <sekundy> | LOGGER START AT YYYY-MM-DD HH:MM:SS (UTC)
+                          -> OK LOGGER WAIT; LOGGER STATUS dopisuje start_at=YYYY-MM-DD HH:MM:SS
+LOGGER CLEAR CONFIRM      (samo LOGGER CLEAR jest odrzucane, E006); po OK urządzenie restartuje się po 0,8 s,
+                          a panel przeładowuje stronę po 8 s (świeży dysk z pustym raportem)
 POWER OFF                 -> OK POWER OFF (zatrzymuje zapis; OFF po odłączeniu USB; LOGGER STATUS dopisuje off=ARMED)
 POWER OFF CANCEL          -> OK POWER OFF CANCEL
-SET TIME YYYY-MM-DD HH:MM:SS
+SET TIME YYYY-MM-DD HH:MM:SS     (UTC; odrzucane, gdy wcześniejsze niż ostatni zapisany pomiar - po CLR dowolne)
 CONFIG BEGIN / key=value ... / CONFIG END   -> OK CONFIG
 ```
 
@@ -331,6 +342,18 @@ a w RUN timer RTC budzi procesor dopiero na następny pomiar
 (`next_measurement − teraz`, maks. 60 s) zamiast co 1 s; zatrzymany logger co
 60 s. Przycisk włącza LCD z powrotem (`templogpro_hw_lcd_init`). Eco ma
 pierwszeństwo przed trybem zegarka; przy USB jest nieaktywne.
+
+**Opóźniony start**: czas startu (UTC) w RAM i w `RTC_BKP3R`, więc przeżywa
+reset. Czekając, logger budzi się na sam start oraz na każdą zmianę cyfr
+odliczania (`M:SS` co 1 s poniżej 21 min, potem co pełną minutę; w eco co
+najwyżej co 60 s). Przy słabej baterii start jest ponawiany co minutę.
+
+**Ostrzeżenie baterii**: na baterii poniżej 2,7 V ikona baterii świeci stale
+na zwykłych ekranach i przy wygaszonym ekranie.
+
+**Odświeżanie dysku**: po zmianie plików (START/STOP/CLR, zapis ustawień, OFF)
+dysk odpowiada „brak nośnika” na dwa zapytania TEST UNIT READY, więc Windows
+odrzuca pamięć podręczną i montuje go od nowa.
 
 **OFF (przechowywanie)**: `POWER OFF` przez USB albo ekran baterii na LCD
 (oba przyciski, odliczanie `o 5…o 0`, napis `OFF` przez 1,2 s) uzbraja tryb, po odłączeniu

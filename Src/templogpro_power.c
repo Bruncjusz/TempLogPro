@@ -277,6 +277,11 @@ uint32_t templogpro_power_enter_stop(void)
     return 1u;
 }
 
+void templogpro_power_system_reset(void)
+{
+    NVIC_SystemReset();
+}
+
 uint32_t templogpro_power_stop_count(void)
 {
     return g_stop_count;

@@ -52,10 +52,13 @@ static uint32_t append_pin(char *buf, uint32_t pos, uint32_t max, const char pin
 static const char *state_name(uint32_t state);
 static const char *config_write_status_name(uint32_t status);
 
+void templogpro_usb_msc_storage_media_changed(void);
+
 void templogpro_usb_files_snapshot_reset(void)
 {
     memset(&g_snapshot, 0, sizeof(g_snapshot));
     templogpro_usb_msc_storage_layout_reset();
+    templogpro_usb_msc_storage_media_changed();
 }
 
 void templogpro_usb_files_snapshot_ensure(void)
@@ -422,6 +425,15 @@ static void html_config_block_build(char *buf, uint32_t len)
     pos = append_u32(buf, pos, len, config.led_enable);
     pos = append_str(buf, pos, len, ",\"unit\":");
     pos = append_u32(buf, pos, len, config.temperature_unit);
+    pos = append_str(buf, pos, len, ",\"alarmDelay\":");
+    pos = append_u32(buf, pos, len, config.alarm_delay_min);
+    {
+        TempLogProPowerStats power_stats;
+
+        templogpro_power_get_stats(&power_stats);
+        pos = append_str(buf, pos, len, ",\"vbatMin\":");
+        pos = append_u32(buf, pos, len, (power_stats.battery_time_ms != 0u) ? power_stats.vdd_min_millivolts : 0u);
+    }
     pos = append_str(buf, pos, len, ",\"ecoMode\":");
     pos = append_u32(buf, pos, len, config.eco_mode);
     pos = append_str(buf, pos, len, ",\"clockMode\":");

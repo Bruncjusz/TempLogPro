@@ -312,6 +312,7 @@ static void encode_config(const StoredConfig *config, uint8_t *raw)
     encode_rule(&raw[54], &config->value.tz_dst_end);
     raw[60] = (uint8_t)config->value.clock_mode;
     raw[61] = (uint8_t)config->value.eco_mode;
+    raw[57] = (uint8_t)config->value.alarm_delay_min;  /* spare byte of the DST end rule */
     raw[51] = (uint8_t)(config->value.lcd_menu_mask >> 16);  /* spare byte of the DST start rule */
     memcpy(&raw[CONFIG_TZ_NAME_OFFSET], config->value.tz_name, TEMPLOGPRO_TZ_NAME_SIZE);
     raw[CONFIG_TZ_NAME_OFFSET + TEMPLOGPRO_TZ_NAME_SIZE - 1u] = 0u;
@@ -402,6 +403,7 @@ static uint32_t decode_config(const uint8_t *raw, StoredConfig *config)
     /* Byte 60 was always written as zero before, so older configs read "off". */
     config->value.clock_mode = (version >= CONFIG_TZ_VERSION) ? raw[60] : 0u;
     config->value.eco_mode = (version >= CONFIG_TZ_VERSION) ? raw[61] : 0u;
+    config->value.alarm_delay_min = (version >= CONFIG_TZ_VERSION) ? raw[57] : 0u;
     if (version >= CONFIG_VERSION) {
         config->value.lcd_menu_mask |= (uint32_t)raw[51] << 16;
     }
@@ -470,6 +472,7 @@ static uint32_t config_is_sane(const TempLogProConfig *config)
         config->usb_logging_enable > 1u ||
         config->clock_mode > 1u ||
         config->eco_mode > 1u ||
+        config->alarm_delay_min > 240u ||
         config->temperature_unit > TEMPLOGPRO_UNIT_FAHRENHEIT) {
         return 0u;
     }
@@ -582,6 +585,8 @@ static void build_config_text(char *buf, uint32_t len)
     pos = append_u32(buf, pos, len, g_config.clock_mode);
     pos = append_str(buf, pos, len, "\r\neco_mode=");
     pos = append_u32(buf, pos, len, g_config.eco_mode);
+    pos = append_str(buf, pos, len, "\r\nalarm_delay_min=");
+    pos = append_u32(buf, pos, len, g_config.alarm_delay_min);
     pos = append_str(buf, pos, len, "\r\ntemperature_unit=");
     pos = append_str(buf, pos, len,
                      (g_config.temperature_unit == TEMPLOGPRO_UNIT_FAHRENHEIT) ? "F" : "C");
@@ -734,6 +739,12 @@ static uint32_t parse_config_text(const uint8_t *source, uint32_t length, TempLo
                 return 0u;
             }
             config->eco_mode = value_u32;
+            parsed = 1u;
+        } else if (key_equals(&source[key_start], key_end - key_start, "alarm_delay_min") != 0u) {
+            if (parse_u32_value(&source[value_start], value_end - value_start, &value_u32) == 0u) {
+                return 0u;
+            }
+            config->alarm_delay_min = value_u32;
             parsed = 1u;
         } else if (key_equals(&source[key_start], key_end - key_start, "tz_name") != 0u) {
             if (parse_name_value(&source[value_start], value_end - value_start, config->tz_name) == 0u) {

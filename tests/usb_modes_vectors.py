@@ -46,7 +46,7 @@ class Device:
         self.fault = ''
         self.flash = bytearray(b'\xff' * 4096)
         self.flash_writes = 0
-        self.vdd_mv, self.flash_ops = 3000, []
+        self.vdd_mv, self.flash_ops, self.bkp, self.resets = 3000, [], {}, []
         self.handlers = {
             'HAL_GetTick': lambda a, b, c: self.tick,
             'templogpro_hw_sensor_init': lambda a, b, c: 1,
@@ -66,6 +66,9 @@ class Device:
             'templogpro_power_read_vdd_mv': self.read_vdd,
             'templogpro_diag_flash_op_begin': lambda a, b, c: self.flash_ops.append(a),
             'templogpro_diag_flash_op_end': lambda a, b, c: self.flash_ops.append(0),
+            'templogpro_diag_bkp_read': lambda a, b, c: self.bkp.get(a, 0),
+            'templogpro_power_system_reset': lambda a, b, c: self.resets.append(self.tick),
+            'templogpro_diag_bkp_write': lambda a, b, c: self.bkp.__setitem__(a, b),
         }
         noop = ['templogpro_rtc_process', 'templogpro_rtc_take_event', 'templogpro_logger_process',
                 'templogpro_logger_get_stats', 'templogpro_logger_get_info', 'templogpro_logger_set_interval',

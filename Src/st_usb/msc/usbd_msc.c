@@ -915,6 +915,10 @@ static void cdc_queue_logger_status(USBD_HandleTypeDef *pdev)
   if (templogpro_app_power_off_armed() != 0U) {
     cdc_queue_text(pdev, " off=ARMED");
   }
+  if (templogpro_app_start_at() != 0U) {
+    cdc_queue_text(pdev, " start_at=");
+    cdc_queue_datetime(pdev, templogpro_app_start_at());
+  }
 
   cdc_queue_text(pdev, "\n");
 }
@@ -1045,6 +1049,29 @@ static void cdc_process_line(USBD_HandleTypeDef *pdev, const char *line)
   } else if ((cdc_text_equals(line, "POWER STATUS") != 0U) ||
              (cdc_text_equals(line, "GET POWER") != 0U)) {
     cdc_queue_power_status(pdev);
+  } else if ((cdc_text_starts(line, "LOGGER START IN ") != 0U) ||
+             (cdc_text_starts(line, "LOGGER START AT ") != 0U)) {
+    uint32_t start_utc = 0U;
+    uint32_t now_utc = 0U;
+    uint32_t seconds = 0U;
+    const char *p;
+
+    arg = cdc_skip_spaces(line + 16);
+    if (line[13] == 'I') {
+      for (p = arg; (*p >= '0') && (*p <= '9') && (seconds < 100000000U); p++) {
+        seconds = (seconds * 10U) + (uint32_t)(*p - '0');
+      }
+      if ((p != arg) && (*p == '\0') && (templogpro_rtc_get_timestamp(&now_utc) != 0U)) {
+        start_utc = now_utc + seconds;
+      }
+    } else if (cdc_parse_datetime(arg, &dt) != 0U) {
+      (void)templogpro_rtc_datetime_to_timestamp(&dt, &start_utc);
+    }
+    if (templogpro_app_usb_report_mode()) {
+      cdc_queue_text(pdev, "ERR E007 USB report mode; enable usb_logging first\n");
+    } else {
+      cdc_queue_logger_action(pdev, "WAIT", (start_utc != 0U) ? templogpro_app_schedule_start(start_utc) : 0U);
+    }
   } else if (cdc_text_equals(line, "LOGGER START") != 0U) {
     if (templogpro_app_usb_report_mode()) {
       cdc_queue_text(pdev, "ERR E007 USB report mode; enable usb_logging first\n");
@@ -1057,7 +1084,12 @@ static void cdc_process_line(USBD_HandleTypeDef *pdev, const char *line)
   } else if (cdc_text_equals(line, "LOGGER CLEAR") != 0U) {
     cdc_queue_text(pdev, "ERR E006 use LOGGER CLEAR CONFIRM\n");
   } else if (cdc_text_equals(line, "LOGGER CLEAR CONFIRM") != 0U) {
-    cdc_queue_logger_action(pdev, "CLEAR", templogpro_app_clear_logger());
+    uint32_t cleared = templogpro_app_clear_logger();
+
+    cdc_queue_logger_action(pdev, "CLEAR", cleared);
+    if (cleared != 0U) {
+      templogpro_app_request_restart(800U);  /* fresh USB disk after clearing */
+    }
   } else if (cdc_text_equals(line, "POWER OFF") != 0U) {
     if (templogpro_app_power_off_arm() != 0U) {
       templogpro_usb_files_snapshot_reset();

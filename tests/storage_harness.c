@@ -193,6 +193,8 @@ uint32_t templogpro_rtc_set_minimum_timestamp(uint32_t timestamp)
     return 1u;
 }
 
+void templogpro_rtc_clear_minimum_timestamp(void) { }
+
 void templogpro_diag_set_flash(uint32_t ok) { (void)ok; }
 void templogpro_diag_set_error(TempLogProError error) { ctl.last_error = (uint32_t)error; }
 void templogpro_diag_set_logger(uint32_t state, uint32_t record_count) { (void)state; (void)record_count; }

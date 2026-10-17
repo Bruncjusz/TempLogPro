@@ -36,6 +36,8 @@ uint32_t templogpro_rtc_get(TempLogProDateTime *dt);
 uint32_t templogpro_rtc_set(const TempLogProDateTime *dt);
 uint32_t templogpro_rtc_get_timestamp(uint32_t *timestamp);
 uint32_t templogpro_rtc_set_minimum_timestamp(uint32_t timestamp);
+/* Forget the newest logged timestamp (after the log is cleared): any time may be set. */
+void templogpro_rtc_clear_minimum_timestamp(void);
 uint32_t templogpro_rtc_monotonic_guard_active(void);
 uint32_t templogpro_rtc_monotonic_floor(void);
 uint32_t templogpro_rtc_take_event(void);

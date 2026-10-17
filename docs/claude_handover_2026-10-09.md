@@ -462,6 +462,30 @@ i sprawdzony testem `lcd_segment_map_vectors.py` na obrazie.
   Potem: OFF przeniesiony na kartę baterii (oba przyciski 3 s), karta OFF usunięta z menu
   (bit 13 nieużywany). Zbudowane, niewgrane: bin
   `2f2a57d36e2a651be5dddd5e5e49fb4c7c23de993fa281d4e39ff0bebdd9b4df`.
+  (Wszystko powyżej wypchnięte jako commit a4c8e45 - stan roboczy, bez wydania.)
+- 2026-10-17: przed dużą aktualizacją: **opóźniony start** (LOGGER START IN/AT, start_at w STATUS,
+  RTC_BKP3R, odliczanie M:SS/H:MM/godziny z klepsydrą i migającym STOP, START = teraz, STOP = anuluj),
+  **opóźnienie alarmu** (alarm_delay_min, bajt 57; zatrzask w RTC_BKP4R; panel: krótkie wyjścia
+  osobno), **ostrzeżenie baterii** (< 2,7 V ikona stale; vbatMin w raporcie), **odświeżanie dysku**
+  (2x NOT READY po zmianie plików). Testy: start_alarm_vectors.py (40), panel_delay_vectors.py (11).
+  Wgrane: bin `e7a2939db06ba76d76e8eb4595688e7853cb1b0216fcda29e53449b072e7b32d`; na urządzeniu
+  sprawdzone przez CDC: WAIT + start_at + anulowanie. Uwaga: podczas testu przypadkiem PAUSE
+  działającego loggera (~15 s przerwy, zdarzenia STOP/RESUME w logu), od razu wznowiony.
+  Potem: panel premium - poświata w tle, własne strzałki select, przyciski -/+ przy polach liczbowych
+  (przytrzymanie powtarza), własne checkboxy i podświetlenie zaznaczonych ekranów LCD, komunikaty
+  z ikoną i kolorem wg typu (ok/bad/warn/info), własne okno potwierdzenia zamiast confirm()
+  (CLR, OFF). Wgrane: bin `9454d2cf3d0021c708a24b3f1a0b50e020980ece3f6c665481d28be67a9793b0`.
+  Potem: własny kalendarz (datetime-local: miesiąc, siatka dni, godzina/minuta -/+ z powtarzaniem,
+  Teraz/Ustaw, min/max), przyciski -/+ obok siebie po prawej, druk: Pro jednolitym kolorem (błąd
+  Chrome z background-clip:text dawał kreskę) i logo bez cienia. Wgrane: bin
+  `e4a8618d0bfc5ddfb2c6602793b680555beef71a3edaf17a72d2b46f0c1a2442`.
+  Potem: (1) CLEAR z panelu: urządzenie restartuje się po 0,8 s (templogpro_app_request_restart ->
+  NVIC_SystemReset), panel przeładowuje stronę po 8 s - świeży dysk; czyszczenie samo działało, panel
+  pokazywał stare dane. (2) SET TIME: blokada cofania zegara porównywała z najpóźniejszym ODCZYTANYM
+  czasem (g_monotonic_floor), więc spieszącego zegara nie dało się poprawić nawet po CLR; teraz
+  g_data_floor = najnowszy zapisany rekord (set_minimum_timestamp), CLR (logger_format) go zeruje.
+  Na urządzeniu zegar był ~1 h 49 min do przodu - ustawiony na czas PC (pamięć pusta). Wgrane: bin
+  `f1e55be0c993aa4fd2ca2565e45dc3caa5f321180984c6dde2489f07480d75aa`.
 
 ## Znane błędy, nienaprawione
 

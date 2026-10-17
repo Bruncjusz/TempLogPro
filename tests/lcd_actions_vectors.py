@@ -131,7 +131,7 @@ def info(ptr,b,c):
     d.uc.mem_write(ptr,struct.pack('<14I',*values))
     return 1
 d.addresses[symbols['templogpro_logger_get_info']]=info
-prefix=bytes(d.uc.mem_read(symbols['HTML_PREFIX'],120000)).split(b'\0')[0]
+prefix=bytes(d.uc.mem_read(symbols['HTML_PREFIX'],min(160000,0x08040000-symbols['HTML_PREFIX']))).split(b'\0')[0]
 offset=len(prefix)+d.call('templogpro_csv_get_size')
 check(d.call('templogpro_html_read',offset,OUT,448)==448)
 text=bytes(d.uc.mem_read(OUT,448)).decode()

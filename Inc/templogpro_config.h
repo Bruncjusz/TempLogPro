@@ -46,6 +46,7 @@ typedef struct
     char tz_name[TEMPLOGPRO_TZ_NAME_SIZE]; /* IANA name for the report, e.g. Europe/Warsaw */
     uint32_t clock_mode;                  /* 1: stopped logger on battery shows the clock */
     uint32_t eco_mode;                    /* 1: on battery the idle LCD, heart and LEDs go fully off */
+    uint32_t alarm_delay_min;             /* 0-240: excursion must last this long to raise the alarm */
 } TempLogProConfig;
 
 uint32_t templogpro_config_init(void);

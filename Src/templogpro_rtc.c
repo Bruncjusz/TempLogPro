@@ -150,6 +150,7 @@ static uint32_t g_calibration_have_edge;
 static uint32_t g_calibration_pending_prer;
 static uint32_t g_calibration_pending_calr;
 static uint32_t g_monotonic_floor;
+static uint32_t g_data_floor;      /* newest logged record: setting the clock earlier is refused */
 static uint32_t g_last_raw_timestamp;
 static uint32_t g_timestamp_offset;
 static uint32_t g_monotonic_guard_active;
@@ -177,6 +178,7 @@ uint32_t templogpro_rtc_init(void)
     uint32_t saved_calendar_valid;
 
     g_monotonic_floor = 0u;
+    g_data_floor = 0u;
     g_last_raw_timestamp = 0u;
     g_timestamp_offset = 0u;
     g_monotonic_guard_active = 0u;
@@ -415,7 +417,9 @@ uint32_t templogpro_rtc_set(const TempLogProDateTime *dt)
         g_time_status = TIME_STATUS_BAD_DATE;
         return 0u;
     }
-    if ((g_monotonic_floor != 0u) && (timestamp < g_monotonic_floor)) {
+    /* Only the log has to stay in order: a fast clock may be corrected back to
+       any time after the newest record (and freely once the log is cleared). */
+    if ((g_data_floor != 0u) && (timestamp < g_data_floor)) {
         g_time_status = TIME_STATUS_ROLLBACK_BLOCKED;
         return 0u;
     }
@@ -426,9 +430,7 @@ uint32_t templogpro_rtc_set(const TempLogProDateTime *dt)
 
     g_timestamp_offset = 0u;
     g_last_raw_timestamp = timestamp;
-    if (timestamp > g_monotonic_floor) {
-        g_monotonic_floor = timestamp;
-    }
+    g_monotonic_floor = (timestamp > g_data_floor) ? timestamp : g_data_floor;
     g_monotonic_guard_active = 0u;
     g_pending_rtc_events |= TEMPLOGPRO_RTC_EVENT_TIME_SET;
     g_time_status = TIME_STATUS_SET_OK;
@@ -489,12 +491,23 @@ uint32_t templogpro_rtc_get_timestamp(uint32_t *timestamp)
     return 1u;
 }
 
+void templogpro_rtc_clear_minimum_timestamp(void)
+{
+    g_data_floor = 0u;
+    g_monotonic_floor = 0u;
+    g_timestamp_offset = 0u;
+    g_monotonic_guard_active = 0u;
+}
+
 uint32_t templogpro_rtc_set_minimum_timestamp(uint32_t timestamp)
 {
     uint32_t current_timestamp;
 
     if (timestamp == 0u) {
         return 1u;
+    }
+    if (timestamp > g_data_floor) {
+        g_data_floor = timestamp;
     }
     if (templogpro_rtc_get_timestamp(&current_timestamp) == 0u) {
         return 0u;

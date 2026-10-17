@@ -68,4 +68,10 @@ void templogpro_diag_flash_op_end(void);
 uint32_t templogpro_diag_interrupted_op(void);   /* operation cut short by the last reset */
 const char *templogpro_diag_reset_cause(void);   /* POWER_DROP_CLEAR, POWER_ON, ... */
 
+/* Free RTC backup registers (survive resets while VDD stays up). */
+#define TEMPLOGPRO_BKP_START_AT       3u  /* delayed start, UTC timestamp */
+#define TEMPLOGPRO_BKP_ALARM_LATCH    4u  /* delayed-alarm latch */
+uint32_t templogpro_diag_bkp_read(uint32_t index);
+void templogpro_diag_bkp_write(uint32_t index, uint32_t value);
+
 #endif

@@ -204,6 +204,7 @@ uint32_t templogpro_logger_format(void)
 {
     metadata_defaults(&g_meta);
     g_metadata_active_address = 0u;
+    templogpro_rtc_clear_minimum_timestamp();  /* empty log: the clock may be set to any time */
     g_logger_initialized = 1u;
     stats_reset();
     g_stats_rebuild_active = 0u;

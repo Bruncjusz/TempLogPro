@@ -38,5 +38,10 @@ uint32_t templogpro_app_stop_wake_seconds(void);
 uint32_t templogpro_app_power_off_arm(void);
 void templogpro_app_power_off_cancel(void);
 uint32_t templogpro_app_power_off_armed(void);
+/* Delayed start: the logger starts by itself at this UTC time (0 = none). */
+uint32_t templogpro_app_schedule_start(uint32_t start_utc);
+uint32_t templogpro_app_start_at(void);
+/* Restart the MCU after delay_ms (lets the USB reply go out first). */
+void templogpro_app_request_restart(uint32_t delay_ms);
 
 #endif

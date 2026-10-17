@@ -40,6 +40,16 @@ z zieloną diodą). Przy zatrzymanym loggerze urządzenie budzi się tylko na
 pełną minutę, więc pobór rośnie o kilka µA. Przyciski działają jak zwykle,
 a po 10 s bezczynności wraca zegar. Przy USB ekran działa jak bez tej opcji.
 
+### Opóźniony start
+
+W panelu, w karcie **Logger**, przy **Start** wybierz **za … minut** albo
+**o godzinie** i kliknij **Start**. Logger czeka i sam zaczyna zapis. Na
+wyświetlaczu widać odliczanie do startu: `M:SS` (poniżej 20 minut, ikona MINS),
+`H:MM` (poniżej 20 godzin, ikona HRS) albo pełne godziny/dni, z klepsydrą
+i migającym znakiem STOP. Przytrzymanie **START** uruchamia zapis od razu,
+przytrzymanie **STOP** anuluje oczekiwanie. Zaplanowany start przetrwa też
+restart urządzenia (np. chwilowy spadek napięcia).
+
 ### Tryb eco
 
 Tryb eco (panel: Ustawienia → Zasilanie, albo ekran **Eco** na LCD) daje
@@ -142,6 +152,7 @@ wewnętrzny zegar może się z czasem spieszyć lub spóźniać.
 | Ustawienie | Opis |
 | --- | --- |
 | Interwał pomiaru | co ile sekund zapisywać pomiar (1–600 s) |
+| Opóźnienie alarmu | 0–240 min; alarm (X, czerwona dioda, przekroczenie w raporcie) dopiero, gdy temperatura jest poza zakresem dłużej niż ten czas; 0 = od razu |
 | Dolny / górny próg alarmu | dozwolony zakres temperatury (°C) |
 | Jednostka temperatury | °C lub °F na wyświetlaczu (raport ma osobny przełącznik) |
 | Ekran po starcie | który ekran pokazać po włączeniu |
@@ -204,6 +215,11 @@ PDF zawsze drukuje się na jasnym tle.*
   na wykresie oznacza zmianę czasu.
 - Szare pole **BRAK DANYCH** na wykresie oznacza przerwę w zapisie, np. gdy
   urządzenie było wyłączone albo zmieniono zegar.
+- Przy ustawionym **opóźnieniu alarmu** wyjścia poza zakres krótsze niż
+  opóźnienie nie są liczone jako przekroczenia: raport pokazuje je osobno
+  jako „krótkie” (szare wiersze w tabeli), a werdykt zostaje zielony.
+- **Informacje** pokazują najniższe napięcie baterii od ostatniego startu
+  urządzenia; poniżej 2,7 V z dopiskiem „wymień baterię”.
 
 ### PDF
 
@@ -284,7 +300,8 @@ ekran **CLR** i oba przyciski przez 3 s. Przed czyszczeniem zapisz raport lub
 | Zła data w raporcie | Ustawienia → **Wstaw czas i strefę z komputera** → **Zapisz w urządzeniu** |
 | Zmiana czasu w złym dniu | Ustawienia → Zmiana czasu: **Ręcznie** i ustaw dni przejścia |
 | Krzyżyk miga, choć temperatura jest dobra | to pamiątka po wcześniejszym przekroczeniu; zniknie po wyczyszczeniu pamięci |
-| Windows pokazuje starą nazwę pliku | odłącz i podłącz USB |
+| Windows pokazuje stare pliki | po START/STOP/CLR i zapisie ustawień dysk odświeża się sam (na chwilę znika); jeśli nie, odłącz i podłącz USB |
+| Ikona baterii świeci cały czas | napięcie baterii poniżej 2,7 V — wymień baterię (CLR/START są już blokowane) |
 | Po CLR/START napis `bAt`, migają bateria i X, nic się nie dzieje | za słaba bateria (poniżej 2,7 V) — wymień ją lub podłącz USB |
 | Ekran całkiem pusty, przyciski nie reagują | urządzenie jest w trybie OFF — przytrzymaj oba przyciski 3 s albo podłącz USB |
 | Urządzenie samo się zrestartowało | sprawdź Informacje → Ostatni restart albo `LAST_RESET` w `POWER.TXT` |

@@ -14,7 +14,7 @@ urządzenia przez Web Serial.
 
 Autor: **Brunon Kucharski** · opracowane we współpracy z **Codex (OpenAI)** i **Claude (Anthropic)**
 Wersja firmware: **1.1.0** · licencja **MIT**  
-_Gałąź main zawiera już funkcje przygotowywane do następnego wydania (tryb zegarka, eco, OFF); gotowe wydania są w zakładce Releases._
+_Gałąź main zawiera już funkcje przygotowywane do następnego wydania (tryb zegarka, eco, OFF, opóźniony start, opóźnienie alarmu, nowy wygląd panelu); gotowe wydania są w zakładce Releases._
 
 ## Funkcje
 

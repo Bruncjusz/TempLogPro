@@ -33,6 +33,7 @@ void templogpro_power_work_end(void);
 void templogpro_power_enter_idle(void);
 uint32_t templogpro_power_enter_stop(void);
 uint32_t templogpro_power_stop_count(void);
+void templogpro_power_system_reset(void);
 uint32_t templogpro_power_read_vdd_mv(uint16_t *vdd_millivolts);
 void templogpro_power_get_stats(TempLogProPowerStats *stats);
 
